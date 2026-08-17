@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-type Ponto = {
+export type Ponto = {
   id: string;
   nome: string;
   endereco: string;
@@ -8,7 +9,7 @@ type Ponto = {
   recebeDistribui: string;
 };
 
-const pontosMock: Ponto[] = [
+export const pontosMock: Ponto[] = [
   {
     id: '1',
     nome: 'Ponto Centro — Igreja São José',
@@ -35,28 +36,48 @@ const pontosMock: Ponto[] = [
   },
 ];
 
-function PontoItem({ ponto }: { ponto: Ponto }) {
+type RootStackParamList = {
+  Lista: undefined;
+  Detalhe: { pontoId: string };
+};
+
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList, 'Lista'>;
+};
+
+function PontoItem({
+  ponto,
+  onPress,
+}: {
+  ponto: Ponto;
+  onPress: () => void;
+}) {
   return (
-    <View style={styles.item}>
+    <TouchableOpacity style={styles.item} onPress={onPress}>
       <Text style={styles.nome}>{ponto.nome}</Text>
       <Text style={styles.endereco}>{ponto.endereco}</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
-export default function TelaListaPontos() {
+export default function TelaListaPontos({ navigation }: Props) {
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text style={styles.titulo}>Pontos de coleta / distribuição</Text>
       {pontosMock.map((ponto) => (
-        <PontoItem key={ponto.id} ponto={ponto} />
+        <PontoItem
+          key={ponto.id}
+          ponto={ponto}
+          onPress={() => navigation.navigate('Detalhe', { pontoId: ponto.id })}
+        />
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 20,
     backgroundColor: '#FFFFFF',
   },

@@ -1,38 +1,30 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import TelaListaPontos from './TelaListaPontos';
 import TelaDetalhePonto from './TelaDetalhePonto';
 
+export type RootStackParamList = {
+  Lista: undefined;
+  Detalhe: { pontoId: string };
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
 export default function App() {
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      <TelaListaPontos />
-      <View style={styles.separador}>
-        <Text style={styles.separadorTexto}>Detalhe (exemplo)</Text>
-      </View>
-      <TelaDetalhePonto />
-      <StatusBar style="auto" />
-    </ScrollView>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Lista">
+        <Stack.Screen
+          name="Lista"
+          component={TelaListaPontos}
+          options={{ title: 'Instituto Mão Amiga' }}
+        />
+        <Stack.Screen
+          name="Detalhe"
+          component={TelaDetalhePonto}
+          options={{ title: 'Detalhe do ponto' }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    paddingTop: 85,
-    paddingBottom: 40,
-  },
-  separador: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    backgroundColor: '#F5F5F5',
-  },
-  separadorTexto: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#888888',
-  },
-});
