@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export type Ponto = {
@@ -13,7 +13,7 @@ export const pontosMock: Ponto[] = [
   {
     id: '1',
     nome: 'Ponto Centro — Igreja São José',
-    endereco: 'Rua das Flores, 120 — Centro',
+    endereco: 'Rua das Flores, 120, Centro, São Luís - MA, CEP 65010-000',
     diasHorarios: 'Segunda a sexta, 9h–17h',
     recebeDistribui:
       'Recebe alimentos não perecíveis e roupas; distribui cestas básicas às terças.',
@@ -21,7 +21,7 @@ export const pontosMock: Ponto[] = [
   {
     id: '2',
     nome: 'Ponto Norte — Associação Bairro Alto',
-    endereco: 'Av. Brasil, 890 — Bairro Alto',
+    endereco: 'Av. Brasil, 890, Bairro Alto, São Luís - MA, CEP 65040-210',
     diasHorarios: 'Terça e quinta, 14h–19h',
     recebeDistribui:
       'Recebe hortifruti de feiras; distribui kits de higiene aos sábados.',
@@ -29,10 +29,42 @@ export const pontosMock: Ponto[] = [
   {
     id: '3',
     nome: 'Ponto Sul — Mercado Comunitário',
-    endereco: 'Travessa do Sol, 45 — Vila Nova',
+    endereco: 'Travessa do Sol, 45, Vila Nova, São Luís - MA, CEP 65060-120',
     diasHorarios: 'Sábado, 8h–12h',
     recebeDistribui:
       'Recebe doações de famílias e mercados; distribui refeições prontas no mesmo dia.',
+  },
+  {
+    id: '4',
+    nome: 'Ponto Leste — Escola Municipal Aurora',
+    endereco: 'Rua Aurora, 310, Cohama, São Luís - MA, CEP 65074-180',
+    diasHorarios: 'Quarta e sexta, 10h–16h',
+    recebeDistribui:
+      'Recebe material escolar e lanches; distribui kits infantis às sextas.',
+  },
+  {
+    id: '5',
+    nome: 'Ponto Oeste — Centro Comunitário Liberdade',
+    endereco: 'Av. dos Holandeses, 1500, Calhau, São Luís - MA, CEP 65071-380',
+    diasHorarios: 'Segunda, quarta e sábado, 8h–12h',
+    recebeDistribui:
+      'Recebe roupas e calçados; distribui enxovais para famílias cadastradas.',
+  },
+  {
+    id: '6',
+    nome: 'Ponto Anil — Paróquia Nossa Senhora',
+    endereco: 'Rua do Anil, 78, Anil, São Luís - MA, CEP 65046-140',
+    diasHorarios: 'Domingo, 7h–11h',
+    recebeDistribui:
+      'Recebe alimentos perecíveis da feira; distribui café da manhã comunitário.',
+  },
+  {
+    id: '7',
+    nome: 'Ponto João Paulo — Associação de Moradores',
+    endereco: 'Rua das Palmeiras, 220, João Paulo, São Luís - MA, CEP 65050-000',
+    diasHorarios: 'Terça a sábado, 13h–18h',
+    recebeDistribui:
+      'Recebe produtos de limpeza e higiene; distribui cestas às quintas.',
   },
 ];
 
@@ -62,16 +94,20 @@ function PontoItem({
 
 export default function TelaListaPontos({ navigation }: Props) {
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.titulo}>Pontos de coleta / distribuição</Text>
-      {pontosMock.map((ponto) => (
+    <FlatList
+      style={styles.container}
+      data={pontosMock}
+      keyExtractor={(item) => item.id}
+      ListHeaderComponent={
+        <Text style={styles.titulo}>Pontos de coleta / distribuição</Text>
+      }
+      renderItem={({ item }) => (
         <PontoItem
-          key={ponto.id}
-          ponto={ponto}
-          onPress={() => navigation.navigate('Detalhe', { pontoId: ponto.id })}
+          ponto={item}
+          onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
         />
-      ))}
-    </ScrollView>
+      )}
+    />
   );
 }
 
