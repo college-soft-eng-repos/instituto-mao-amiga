@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView, TextInput } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useMemo, useState } from 'react';
 
 export type Ponto = {
   id: string;
@@ -93,13 +94,29 @@ function PontoItem({
 }
 
 export default function TelaListaPontos({ navigation }: Props) {
+  const [busca, setBusca] = useState('');
+  const pontosFiltrados = useMemo(() => {
+    return pontosMock.filter((ponto) =>
+      ponto.nome.toLowerCase().includes(busca.toLowerCase())
+    );
+  }, [busca])
+
   return (
-    <FlatList
-      style={styles.container}
-      data={pontosMock}
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.titulo}>Buscar Pontos</Text>
+      <TextInput
+        style={styles.inputBusca}
+        placeholder="Buscar pontos..."
+        placeholderTextColor="#7c7c8a"
+        value={busca}
+        onChangeText={setBusca}
+        autoCorrect={false}
+      />
+      <FlatList
+      data={pontosFiltrados}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
-        <Text style={styles.titulo}>Pontos de coleta / distribuição</Text>
+        <Text style={styles.titulo}>Todos os Pontos</Text>
       }
       renderItem={({ item }) => (
         <PontoItem
@@ -107,7 +124,9 @@ export default function TelaListaPontos({ navigation }: Props) {
           onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
         />
       )}
+      contentContainerStyle={styles.listaContainer}
     />
+    </SafeAreaView>
   );
 }
 
@@ -138,5 +157,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     marginTop: 4,
+  },
+  inputBusca: {
+    height: 40,
+    borderColor: '#CCCCCC',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    marginBottom: 36,
+    color: '#000000',
+  },
+  listaContainer: {
+    paddingBottom: 20,
   },
 });
