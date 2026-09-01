@@ -116,7 +116,15 @@ export default function TelaListaPontos({ navigation }: Props) {
       data={pontosFiltrados}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
-        <Text style={styles.titulo}>Todos os Pontos</Text>
+        <View>
+          <TouchableOpacity
+            style={styles.botaoCadastro}
+            onPress={() => navigation.navigate('CadastroDoacao')}
+          >
+            <Text style={styles.botaoCadastroTexto}>+ Cadastrar doação</Text>
+          </TouchableOpacity>
+          <Text style={styles.titulo}>Todos os Pontos</Text>
+        </View>
       }
       renderItem={({ item }) => (
         <PontoItem
@@ -169,5 +177,17 @@ const styles = StyleSheet.create({
   },
   listaContainer: {
     paddingBottom: 20,
+  },
+  botaoCadastro: {
+    backgroundColor: '#1B3A5C',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  botaoCadastroTexto: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
