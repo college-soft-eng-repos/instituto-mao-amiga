@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { pontosMock, type Ponto } from './TelaListaPontos';
+import { useConteudoResponsivo } from './useConteudoResponsivo';
 
 type RootStackParamList = {
   Lista: undefined;
@@ -10,15 +11,21 @@ type RootStackParamList = {
 type Props = NativeStackScreenProps<RootStackParamList, 'Detalhe'>;
 
 function DetalhePonto({ ponto }: { ponto: Ponto }) {
+  const { conteudoStyle } = useConteudoResponsivo();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.nome}>{ponto.nome}</Text>
-      <Text style={styles.rotulo}>Endereço</Text>
-      <Text style={styles.texto}>{ponto.endereco}</Text>
-      <Text style={styles.rotulo}>Dias e horários</Text>
-      <Text style={styles.texto}>{ponto.diasHorarios}</Text>
-      <Text style={styles.rotulo}>Recebe / distribui</Text>
-      <Text style={styles.texto}>{ponto.recebeDistribui}</Text>
+    // Fundo branco na tela inteira; a largura limitada fica só no miolo
+    // (senão aparece faixa cinza dos lados no desktop — fundo do navigator).
+    <View style={styles.tela}>
+      <View style={[styles.conteudo, conteudoStyle]}>
+        <Text style={styles.nome}>{ponto.nome}</Text>
+        <Text style={styles.rotulo}>Endereço</Text>
+        <Text style={styles.texto}>{ponto.endereco}</Text>
+        <Text style={styles.rotulo}>Dias e horários</Text>
+        <Text style={styles.texto}>{ponto.diasHorarios}</Text>
+        <Text style={styles.rotulo}>Recebe / distribui</Text>
+        <Text style={styles.texto}>{ponto.recebeDistribui}</Text>
+      </View>
     </View>
   );
 }
@@ -29,8 +36,8 @@ export default function TelaDetalhePonto({ route }: Props) {
 
   if (!ponto) {
     return (
-      <View style={styles.container}>
-        <Text>Ponto não encontrado.</Text>
+      <View style={styles.tela}>
+        <Text style={styles.texto}>Ponto não encontrado.</Text>
       </View>
     );
   }
@@ -39,16 +46,20 @@ export default function TelaDetalhePonto({ route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  tela: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#FFFFFF',
+  },
+  conteudo: {
+    flex: 1,
+    paddingVertical: 20,
   },
   nome: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#1B3A5C',
     marginBottom: 16,
+    flexShrink: 1,
   },
   rotulo: {
     fontSize: 13,
@@ -60,5 +71,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333333',
     marginTop: 4,
+    flexShrink: 1,
+    lineHeight: 22,
   },
 });

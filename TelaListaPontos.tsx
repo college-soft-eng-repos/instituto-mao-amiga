@@ -1,6 +1,15 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView, TextInput } from 'react-native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  TextInput,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useConteudoResponsivo } from './useConteudoResponsivo';
 
 export type Ponto = {
   id: string;
@@ -72,6 +81,7 @@ export const pontosMock: Ponto[] = [
 type RootStackParamList = {
   Lista: undefined;
   Detalhe: { pontoId: string };
+  CadastroDoacao: undefined;
 };
 
 type Props = {
@@ -95,45 +105,51 @@ function PontoItem({
 
 export default function TelaListaPontos({ navigation }: Props) {
   const [busca, setBusca] = useState('');
+  const { conteudoStyle } = useConteudoResponsivo();
   const pontosFiltrados = useMemo(() => {
     return pontosMock.filter((ponto) =>
       ponto.nome.toLowerCase().includes(busca.toLowerCase())
     );
-  }, [busca])
+  }, [busca]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.titulo}>Buscar Pontos</Text>
-      <TextInput
-        style={styles.inputBusca}
-        placeholder="Buscar pontos..."
-        placeholderTextColor="#7c7c8a"
-        value={busca}
-        onChangeText={setBusca}
-        autoCorrect={false}
-      />
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      {/*
+        Issue #06: padding lateral + largura relativa (useConteudoResponsivo)
+        no contentContainerStyle, para não grudar na borda nem esticar em tablet.
+      */}
       <FlatList
-      data={pontosFiltrados}
-      keyExtractor={(item) => item.id}
-      ListHeaderComponent={
-        <View>
-          <TouchableOpacity
-            style={styles.botaoCadastro}
-            onPress={() => navigation.navigate('CadastroDoacao')}
-          >
-            <Text style={styles.botaoCadastroTexto}>+ Cadastrar doação</Text>
-          </TouchableOpacity>
-          <Text style={styles.titulo}>Todos os Pontos</Text>
-        </View>
-      }
-      renderItem={({ item }) => (
-        <PontoItem
-          ponto={item}
-          onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
-        />
-      )}
-      contentContainerStyle={styles.listaContainer}
-    />
+        style={styles.lista}
+        data={pontosFiltrados}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={[styles.listaConteudo, conteudoStyle]}
+        ListHeaderComponent={
+          <View style={styles.cabecalho}>
+            <Text style={styles.titulo}>Buscar Pontos</Text>
+            <TextInput
+              style={styles.inputBusca}
+              placeholder="Buscar pontos..."
+              placeholderTextColor="#7c7c8a"
+              value={busca}
+              onChangeText={setBusca}
+              autoCorrect={false}
+            />
+            <TouchableOpacity
+              style={styles.botaoCadastro}
+              onPress={() => navigation.navigate('CadastroDoacao')}
+            >
+              <Text style={styles.botaoCadastroTexto}>+ Cadastrar doação</Text>
+            </TouchableOpacity>
+            <Text style={styles.titulo}>Todos os Pontos</Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <PontoItem
+            ponto={item}
+            onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
+          />
+        )}
+      />
     </SafeAreaView>
   );
 }
@@ -141,18 +157,32 @@ export default function TelaListaPontos({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#FFFFFF',
+  },
+  lista: {
+    flex: 1,
+  },
+  listaConteudo: {
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  cabecalho: {
+    marginBottom: 4,
   },
   titulo: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1B3A5C',
-    marginBottom: 16,
+    marginBottom: 12,
+    flexShrink: 1,
   },
   item: {
-    marginBottom: 16,
-    paddingBottom: 16,
+    // Issue #06 / revisão em pares: alvo de toque mínimo 44px (WCAG 2.5.5)
+    minHeight: 44,
+    justifyContent: 'center',
+    marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
@@ -160,28 +190,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#1B3A5C',
+    flexShrink: 1,
   },
   endereco: {
     fontSize: 14,
     color: '#666666',
     marginTop: 4,
+    flexShrink: 1,
+    lineHeight: 20,
   },
   inputBusca: {
-    height: 40,
+    // Issue #06 / revisão em pares: height 40 → minHeight 44 (alvo de toque)
+    minHeight: 44,
     borderColor: '#CCCCCC',
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 20,
-    marginBottom: 36,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginBottom: 12,
     color: '#000000',
-  },
-  listaContainer: {
-    paddingBottom: 20,
   },
   botaoCadastro: {
     backgroundColor: '#1B3A5C',
-    padding: 14,
+    padding: 12,
     borderRadius: 8,
+    // Issue #06: alvo de toque mínimo 44px + texto centralizado
+    minHeight: 44,
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
   },
