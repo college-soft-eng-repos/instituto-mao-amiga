@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -25,9 +26,48 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
   const [pontoDestinoId, setPontoDestinoId] = useState('');
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
+  const [carregando, setCarregando] = useState(true); // Evita salvar antes de carregar
   const inputQuantidadeRef = useRef<TextInput>(null);
 
-  function validarESalvar() {
+  // 1. Carrega o rascunho salvo ao abrir a tela
+  useEffect(() => {
+    async function carregarRascunho() {
+      try {
+        const dadosSalvos = await AsyncStorage.getItem('@app_doacao:rascunho');
+        if (dadosSalvos !== null) {
+          const rascunho = JSON.parse(dadosSalvos);
+          setTipoItem(rascunho.tipoItem || '');
+          setQuantidade(rascunho.quantidade || '');
+          setPontoDestinoId(rascunho.pontoDestinoId || '');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar o rascunho da doação:', error);
+      } finally {
+        setCarregando(false);
+      }
+    }
+    carregarRascunho();
+  }, []);
+
+  // 2. Salva o rascunho automaticamente a cada alteração nos campos
+  useEffect(() => {
+    if (carregando) return; // Não sobrescreve o armazenamento no primeiro render
+
+    async function salvarRascunho() {
+      try {
+        const rascunho = { tipoItem, quantidade, pontoDestinoId };
+        await AsyncStorage.setItem(
+          '@app_doacao:rascunho',
+          JSON.stringify(rascunho)
+        );
+      } catch (error) {
+        console.error('Erro ao salvar o rascunho da doação:', error);
+      }
+    }
+    salvarRascunho();
+  }, [tipoItem, quantidade, pontoDestinoId, carregando]);
+
+  async function validarESalvar() {
     setSucesso('');
 
     if (tipoItem.trim() === '') {
@@ -54,17 +94,26 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
     const ponto = pontosMock.find((p) => p.id === pontoDestinoId);
     setErro('');
     setSucesso(
-      `Doação registrada: ${quantidadeNumerica}x ${tipoItem.trim()} → ${ponto?.nome ?? 'ponto selecionado'}.`
+      `Doação registrada: ${quantidadeNumerica}x ${tipoItem.trim()} → ${
+        ponto?.nome ?? 'ponto selecionado'
+      }.`
     );
+    
+    // Limpa a tela
     setTipoItem('');
     setQuantidade('');
     setPontoDestinoId('');
     Keyboard.dismiss();
+
+    // 3. Remove o rascunho do AsyncStorage após o envio com sucesso
+    try {
+      await AsyncStorage.removeItem('@app_doacao:rascunho');
+    } catch (error) {
+      console.error('Erro ao limpar o rascunho da doação:', error);
+    }
   }
 
   return (
-    // Issue #06: SafeAreaView sem 'top' (header do Stack já cobre) +
-    // KeyboardAvoidingView (pergunta 3 da auditoria / apontamento da Eduarda).
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.flex}
@@ -76,66 +125,66 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
           contentContainerStyle={[styles.conteudo, conteudoStyle]}
           keyboardShouldPersistTaps="handled"
         >
-        <Text style={styles.titulo}>Cadastrar doação</Text>
+          <Text style={styles.titulo}>Cadastrar doação</Text>
 
-        <Text style={styles.rotulo}>Tipo do item</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex.: arroz, roupa, leite"
-          placeholderTextColor="#888888"
-          value={tipoItem}
-          onChangeText={setTipoItem}
-          returnKeyType="next"
-          onSubmitEditing={() => inputQuantidadeRef.current?.focus()}
-        />
+          <Text style={styles.rotulo}>Tipo do item</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex.: arroz, roupa, leite"
+            placeholderTextColor="#888888"
+            value={tipoItem}
+            onChangeText={setTipoItem}
+            returnKeyType="next"
+            onSubmitEditing={() => inputQuantidadeRef.current?.focus()}
+          />
 
-        <Text style={styles.rotulo}>Quantidade</Text>
-        <TextInput
-          ref={inputQuantidadeRef}
-          style={styles.input}
-          placeholder="Ex.: 10"
-          placeholderTextColor="#888888"
-          value={quantidade}
-          onChangeText={setQuantidade}
-          keyboardType="number-pad"
-          returnKeyType="done"
-          onSubmitEditing={validarESalvar}
-        />
+          <Text style={styles.rotulo}>Quantidade</Text>
+          <TextInput
+            ref={inputQuantidadeRef}
+            style={styles.input}
+            placeholder="Ex.: 10"
+            placeholderTextColor="#888888"
+            value={quantidade}
+            onChangeText={setQuantidade}
+            keyboardType="number-pad"
+            returnKeyType="done"
+            onSubmitEditing={validarESalvar}
+          />
 
-        <Text style={styles.rotulo}>Ponto de destino</Text>
-        {pontosMock.map((ponto) => (
-          <TouchableOpacity
-            key={ponto.id}
-            style={[
-              styles.pontoOpcao,
-              pontoDestinoId === ponto.id && styles.pontoSelecionado,
-            ]}
-            onPress={() => setPontoDestinoId(ponto.id)}
-          >
-            <Text
+          <Text style={styles.rotulo}>Ponto de destino</Text>
+          {pontosMock.map((ponto) => (
+            <TouchableOpacity
+              key={ponto.id}
               style={[
-                styles.pontoNome,
-                pontoDestinoId === ponto.id && styles.pontoNomeSelecionado,
+                styles.pontoOpcao,
+                pontoDestinoId === ponto.id && styles.pontoSelecionado,
               ]}
+              onPress={() => setPontoDestinoId(ponto.id)}
             >
-              {ponto.nome}
-            </Text>
+              <Text
+                style={[
+                  styles.pontoNome,
+                  pontoDestinoId === ponto.id && styles.pontoNomeSelecionado,
+                ]}
+              >
+                {ponto.nome}
+              </Text>
+            </TouchableOpacity>
+          ))}
+
+          {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
+          {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
+
+          <TouchableOpacity style={styles.botao} onPress={validarESalvar}>
+            <Text style={styles.botaoTexto}>Registrar doação</Text>
           </TouchableOpacity>
-        ))}
 
-        {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
-        {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
-
-        <TouchableOpacity style={styles.botao} onPress={validarESalvar}>
-          <Text style={styles.botaoTexto}>Registrar doação</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.botaoSecundario}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.botaoSecundarioTexto}>Voltar</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.botaoSecundario}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.botaoSecundarioTexto}>Voltar</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -151,7 +200,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   conteudo: {
-    // paddingHorizontal / width % vêm de useConteudoResponsivo (Issue #06)
     paddingTop: 20,
     paddingBottom: 40,
   },
@@ -177,7 +225,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333333',
     backgroundColor: '#FFFFFF',
-    // Issue #06: alvo de toque mínimo 44px também nos campos do formulário
     minHeight: 44,
   },
   pontoOpcao: {
@@ -187,7 +234,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     marginBottom: 8,
-    // Issue #06: cada opção de ponto ≥ 44px de altura tocável
     minHeight: 44,
     justifyContent: 'center',
   },
@@ -218,7 +264,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1B3A5C',
     padding: 12,
     borderRadius: 8,
-    // Issue #06: botão "Registrar doação" com alvo ≥ 44px
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
@@ -232,7 +277,6 @@ const styles = StyleSheet.create({
   botaoSecundario: {
     padding: 12,
     borderRadius: 8,
-    // Issue #06: botão "Voltar" com alvo ≥ 44px
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
