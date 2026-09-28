@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -16,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from './App';
 import { pontosMock } from './TelaListaPontos';
 import { useConteudoResponsivo } from './useConteudoResponsivo';
+import { salvarDoacao, carregarRascunho, salvarRascunho, limparRascunho } from './storage/doacoesStorage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CadastroDoacao'>;
 
@@ -29,43 +29,34 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
   const [carregando, setCarregando] = useState(true); // Evita salvar antes de carregar
   const inputQuantidadeRef = useRef<TextInput>(null);
 
-  // 1. Carrega o rascunho salvo ao abrir a tela
-  useEffect(() => {
-    async function carregarRascunho() {
+  // Carrega o rascunho salvo ao abrir a tela
+useEffect(() => {
+    async function inicializarRascunho() {
       try {
-        const dadosSalvos = await AsyncStorage.getItem('@app_doacao:rascunho');
-        if (dadosSalvos !== null) {
-          const rascunho = JSON.parse(dadosSalvos);
+        const rascunho = await carregarRascunho();
+        if (rascunho) {
           setTipoItem(rascunho.tipoItem || '');
           setQuantidade(rascunho.quantidade || '');
           setPontoDestinoId(rascunho.pontoDestinoId || '');
         }
       } catch (error) {
-        console.error('Erro ao carregar o rascunho da doação:', error);
+        console.error('Erro ao carregar o rascunho:', error);
       } finally {
         setCarregando(false);
       }
     }
-    carregarRascunho();
+    inicializarRascunho();
   }, []);
 
-  // 2. Salva o rascunho automaticamente a cada alteração nos campos
+  // Salva o rascunho automaticamente a cada alteração nos campos
   useEffect(() => {
-    if (carregando) return; // Não sobrescreve o armazenamento no primeiro render
+      if (carregando) return;
 
-    async function salvarRascunho() {
-      try {
-        const rascunho = { tipoItem, quantidade, pontoDestinoId };
-        await AsyncStorage.setItem(
-          '@app_doacao:rascunho',
-          JSON.stringify(rascunho)
-        );
-      } catch (error) {
-        console.error('Erro ao salvar o rascunho da doação:', error);
+      async function persistirRascunho() {
+        await salvarRascunho({ tipoItem, quantidade, pontoDestinoId });
       }
-    }
-    salvarRascunho();
-  }, [tipoItem, quantidade, pontoDestinoId, carregando]);
+      persistirRascunho();
+    }, [tipoItem, quantidade, pontoDestinoId, carregando]);
 
   async function validarESalvar() {
     setSucesso('');
@@ -92,24 +83,32 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
     }
 
     const ponto = pontosMock.find((p) => p.id === pontoDestinoId);
-    setErro('');
-    setSucesso(
-      `Doação registrada: ${quantidadeNumerica}x ${tipoItem.trim()} → ${
-        ponto?.nome ?? 'ponto selecionado'
-      }.`
-    );
-    
-    // Limpa a tela
-    setTipoItem('');
-    setQuantidade('');
-    setPontoDestinoId('');
-    Keyboard.dismiss();
 
-    // 3. Remove o rascunho do AsyncStorage após o envio com sucesso
     try {
-      await AsyncStorage.removeItem('@app_doacao:rascunho');
+      await salvarDoacao({
+        tipoItem: tipoItem.trim(),
+        quantidade: quantidadeNumerica,
+        pontoDestino: ponto?.nome ?? 'Ponto não especificado',
+      });
+
+      setErro('');
+      setSucesso(
+        `Doação registrada: ${quantidadeNumerica}x ${tipoItem.trim()} → ${
+          ponto?.nome ?? 'ponto selecionado'
+        }.`
+      );
+      
+      // Limpa a tela
+      setTipoItem('');
+      setQuantidade('');
+      setPontoDestinoId('');
+      Keyboard.dismiss();
+
+      // Limpa o rascunho salvo após o sucesso
+      await limparRascunho();
     } catch (error) {
       console.error('Erro ao limpar o rascunho da doação:', error);
+      setErro('Erro ao salvar a doação.');
     }
   }
 
