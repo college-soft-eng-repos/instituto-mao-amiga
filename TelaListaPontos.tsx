@@ -82,6 +82,7 @@ type RootStackParamList = {
   Lista: undefined;
   Detalhe: { pontoId: string };
   CadastroDoacao: undefined;
+  HistoricoDoacoes: undefined; // Adicionado aqui nos tipos locais da tela
 };
 
 type Props = {
@@ -114,10 +115,6 @@ export default function TelaListaPontos({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-      {/*
-        Issue #06: padding lateral + largura relativa (useConteudoResponsivo)
-        no contentContainerStyle, para não grudar na borda nem esticar em tablet.
-      */}
       <FlatList
         style={styles.lista}
         data={pontosFiltrados}
@@ -134,12 +131,23 @@ export default function TelaListaPontos({ navigation }: Props) {
               onChangeText={setBusca}
               autoCorrect={false}
             />
+            
+            {/* Botão de Cadastrar Doação */}
             <TouchableOpacity
               style={styles.botaoCadastro}
               onPress={() => navigation.navigate('CadastroDoacao')}
             >
               <Text style={styles.botaoCadastroTexto}>+ Cadastrar doação</Text>
             </TouchableOpacity>
+
+            {/* Novo Botão: Ver Histórico de Doações */}
+            <TouchableOpacity
+              style={styles.botaoHistorico}
+              onPress={() => navigation.navigate('HistoricoDoacoes')}
+            >
+              <Text style={styles.botaoHistoricoTexto}>Ver histórico de doações</Text>
+            </TouchableOpacity>
+
             <Text style={styles.titulo}>Todos os Pontos</Text>
           </View>
         }
@@ -177,7 +185,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   item: {
-    // Issue #06 / revisão em pares: alvo de toque mínimo 44px (WCAG 2.5.5)
     minHeight: 44,
     justifyContent: 'center',
     marginBottom: 8,
@@ -200,7 +207,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   inputBusca: {
-    // Issue #06 / revisão em pares: height 40 → minHeight 44 (alvo de toque)
     minHeight: 44,
     borderColor: '#CCCCCC',
     borderWidth: 1,
@@ -214,14 +220,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#1B3A5C',
     padding: 12,
     borderRadius: 8,
-    // Issue #06: alvo de toque mínimo 44px + texto centralizado
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  botaoCadastroTexto: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  botaoHistorico: {
+    backgroundColor: '#F0F4F8',
+    borderColor: '#1B3A5C',
+    borderWidth: 1,
+    padding: 12,
+    borderRadius: 8,
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
   },
-  botaoCadastroTexto: {
-    color: '#FFFFFF',
+  botaoHistoricoTexto: {
+    color: '#1B3A5C',
     fontWeight: '600',
     fontSize: 16,
   },
