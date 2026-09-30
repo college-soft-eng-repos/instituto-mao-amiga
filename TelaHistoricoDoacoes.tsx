@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -45,6 +46,7 @@ const DoacaoItem = React.memo(({ item, onPress }: { item: Doacao; onPress: () =>
 export default function TelaHistoricoDoacoes({ navigation }: Props) {
   const { conteudoStyle } = useConteudoResponsivo();
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);
+  const [busca, setBusca] = useState('');
   const [carregando, setCarregando] = useState(true);
 
   // Recarrega as doações sempre que a tela entra em foco
@@ -60,28 +62,56 @@ export default function TelaHistoricoDoacoes({ navigation }: Props) {
     }, [])
   );
 
+  // Filtra as doações pelo tipo de item enquanto o usuário digita
+  const doacoesFiltradas = useMemo(() => {
+    return doacoes.filter((item) =>
+      item.tipoItem.toLowerCase().includes(busca.toLowerCase().trim())
+    );
+  }, [doacoes, busca]);
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-      <View style={[styles.headerContainer, conteudoStyle]}>
-        <Text style={styles.titulo}>Minhas Doações</Text>
-      </View>
-
       <FlatList
-        data={doacoes}
+        data={doacoesFiltradas}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listaConteudo, conteudoStyle]}
-        renderItem={({ item }) => <DoacaoItem item={item} 
-        onPress={() => navigation.navigate('DetalheDoacao', { doacaoId: item.id })} />}
+        ListHeaderComponent={
+          <View style={styles.headerContainer}>
+            <Text style={styles.titulo}>Minhas Doações</Text>
+            <TextInput
+              style={styles.inputBusca}
+              placeholder="Buscar por tipo de item..."
+              placeholderTextColor="#7c7c8a"
+              value={busca}
+              onChangeText={setBusca}
+              autoCorrect={false}
+            />
+          </View>
+        }
+        renderItem={({ item }) => (
+          <DoacaoItem
+            item={item}
+            onPress={() => navigation.navigate('DetalheDoacao', { doacaoId: item.id })}
+          />
+        )}
         ListEmptyComponent={
           !carregando ? (
             <View style={styles.vazioContainer}>
-              <Text style={styles.vazioTexto}>Nenhuma doação registrada ainda.</Text>
-              <TouchableOpacity
-                style={styles.botaoCadastrarVazio}
-                onPress={() => navigation.navigate('CadastroDoacao')}
-              >
-                <Text style={styles.botaoCadastrarVazioTexto}>Cadastrar primeira doação</Text>
-              </TouchableOpacity>
+              {doacoes.length === 0 ? (
+                <>
+                  <Text style={styles.vazioTexto}>Nenhuma doação registrada ainda.</Text>
+                  <TouchableOpacity
+                    style={styles.botaoCadastrarVazio}
+                    onPress={() => navigation.navigate('CadastroDoacao')}
+                  >
+                    <Text style={styles.botaoCadastrarVazioTexto}>Cadastrar primeira doação</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <Text style={styles.vazioTexto}>
+                  Nenhuma doação encontrada para "{busca}".
+                </Text>
+              )}
             </View>
           ) : null
         }
@@ -103,6 +133,18 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: '#1B3A5C',
+    marginBottom: 12,
+  },
+  inputBusca: {
+    minHeight: 44,
+    borderColor: '#CCCCCC',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginBottom: 16,
+    color: '#000000',
+    backgroundColor: '#FFFFFF',
   },
   listaConteudo: {
     paddingBottom: 24,
@@ -143,13 +185,14 @@ const styles = StyleSheet.create({
   vazioContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 60,
+    paddingTop: 40,
   },
   vazioTexto: {
     fontSize: 16,
     color: '#666666',
     marginBottom: 16,
     textAlign: 'center',
+    paddingHorizontal: 16,
   },
   botaoCadastrarVazio: {
     backgroundColor: '#1B3A5C',

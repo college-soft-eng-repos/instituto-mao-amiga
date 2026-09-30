@@ -10,7 +10,7 @@ import TelaDetalheDoacao from './TelaDetalheDoacao';
 export type RootStackParamList = {
   Lista: undefined;
   Detalhe: { pontoId: string };
-  CadastroDoacao: { doacaoId?: string };
+  CadastroDoacao: { doacaoId?: string } | undefined;
   HistoricoDoacoes: undefined;
   DetalheDoacao: { doacaoId: string };
 };
