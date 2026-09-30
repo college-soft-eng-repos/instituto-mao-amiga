@@ -12,9 +12,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from './App';
-import { listarDoacoes, excluirDoacao } from './storage/doacoesStorage';
-import { useConteudoResponsivo } from './useConteudoResponsivo';
+import type { RootStackParamList } from '../App';
+import { listarDoacoes, excluirDoacao } from '../services/doacoesStorage';
+import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetalheDoacao'>;
 

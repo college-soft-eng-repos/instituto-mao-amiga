@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { pontosMock, type Ponto } from './TelaListaPontos';
-import { useConteudoResponsivo } from './useConteudoResponsivo';
+import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
 
 type RootStackParamList = {
   Lista: undefined;

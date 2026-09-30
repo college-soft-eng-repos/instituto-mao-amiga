@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useConteudoResponsivo } from './useConteudoResponsivo';
+import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
 
 export type Ponto = {
   id: string;

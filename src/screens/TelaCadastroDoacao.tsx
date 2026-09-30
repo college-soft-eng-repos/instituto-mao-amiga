@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { RootStackParamList } from './App';
+import type { RootStackParamList } from '../App';
 import { pontosMock } from './TelaListaPontos';
-import { useConteudoResponsivo } from './useConteudoResponsivo';
+import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
 import { 
   salvarDoacao, 
   listarDoacoes, 
@@ -22,7 +22,7 @@ import {
   carregarRascunho, 
   salvarRascunho, 
   limparRascunho 
-} from './storage/doacoesStorage';
+} from '../services/doacoesStorage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CadastroDoacao'>;
 
