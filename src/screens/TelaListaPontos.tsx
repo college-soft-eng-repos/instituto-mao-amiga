@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
+import ListItemCard from '../components/ListItemCard'; // <-- Importado
 
 export type Ponto = {
   id: string;
@@ -82,27 +83,12 @@ type RootStackParamList = {
   Lista: undefined;
   Detalhe: { pontoId: string };
   CadastroDoacao: undefined;
-  HistoricoDoacoes: undefined; // Adicionado aqui nos tipos locais da tela
+  HistoricoDoacoes: undefined;
 };
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Lista'>;
 };
-
-function PontoItem({
-  ponto,
-  onPress,
-}: {
-  ponto: Ponto;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity style={styles.item} onPress={onPress}>
-      <Text style={styles.nome}>{ponto.nome}</Text>
-      <Text style={styles.endereco}>{ponto.endereco}</Text>
-    </TouchableOpacity>
-  );
-}
 
 export default function TelaListaPontos({ navigation }: Props) {
   const [busca, setBusca] = useState('');
@@ -132,7 +118,6 @@ export default function TelaListaPontos({ navigation }: Props) {
               autoCorrect={false}
             />
             
-            {/* Botão de Cadastrar Doação */}
             <TouchableOpacity
               style={styles.botaoCadastro}
               onPress={() => navigation.navigate('CadastroDoacao')}
@@ -140,7 +125,6 @@ export default function TelaListaPontos({ navigation }: Props) {
               <Text style={styles.botaoCadastroTexto}>+ Cadastrar doação</Text>
             </TouchableOpacity>
 
-            {/* Novo Botão: Ver Histórico de Doações */}
             <TouchableOpacity
               style={styles.botaoHistorico}
               onPress={() => navigation.navigate('HistoricoDoacoes')}
@@ -152,8 +136,10 @@ export default function TelaListaPontos({ navigation }: Props) {
           </View>
         }
         renderItem={({ item }) => (
-          <PontoItem
-            ponto={item}
+          <ListItemCard
+            titulo={item.nome}
+            subtitulo={item.endereco}
+            detalheRodape={item.diasHorarios}
             onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
           />
         )}
@@ -165,7 +151,7 @@ export default function TelaListaPontos({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F9FA', // Fundo padronizado com o histórico
   },
   lista: {
     flex: 1,
@@ -173,6 +159,7 @@ const styles = StyleSheet.create({
   listaConteudo: {
     paddingTop: 8,
     paddingBottom: 24,
+    paddingHorizontal: 16,
   },
   cabecalho: {
     marginBottom: 4,
@@ -184,43 +171,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     flexShrink: 1,
   },
-  item: {
-    minHeight: 44,
-    justifyContent: 'center',
-    marginBottom: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  nome: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1B3A5C',
-    flexShrink: 1,
-  },
-  endereco: {
-    fontSize: 14,
-    color: '#666666',
-    marginTop: 4,
-    flexShrink: 1,
-    lineHeight: 20,
-  },
   inputBusca: {
-    minHeight: 44,
-    borderColor: '#CCCCCC',
+    minHeight: 46,
+    borderColor: '#E2E8F0',
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 10,
     marginBottom: 12,
-    color: '#000000',
+    color: '#212529',
+    backgroundColor: '#FFFFFF',
+    fontSize: 15,
   },
   botaoCadastro: {
     backgroundColor: '#1B3A5C',
     padding: 12,
-    borderRadius: 8,
-    minHeight: 44,
+    borderRadius: 10,
+    minHeight: 46,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -231,12 +198,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   botaoHistorico: {
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#FFFFFF',
     borderColor: '#1B3A5C',
     borderWidth: 1,
     padding: 12,
-    borderRadius: 8,
-    minHeight: 44,
+    borderRadius: 10,
+    minHeight: 46,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
