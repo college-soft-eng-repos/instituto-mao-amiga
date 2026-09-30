@@ -24,21 +24,21 @@ type Doacao = {
 };
 
 // Componente separado e otimizado com React.memo 
-const DoacaoItem = React.memo(({ item }: { item: Doacao }) => {
+const DoacaoItem = React.memo(({ item, onPress }: { item: Doacao; onPress: () => void }) => {
   const dataFormatada = new Date(item.criadoEm).toLocaleString('pt-BR', {
     dateStyle: 'short',
     timeStyle: 'short',
   });
 
   return (
-    <View style={styles.itemContainer}>
+    <TouchableOpacity style={styles.itemContainer} onPress={onPress}>
       <View style={styles.itemCabecalho}>
         <Text style={styles.itemTipo}>{item.tipoItem}</Text>
         <Text style={styles.itemQtd}>{item.quantidade} un.</Text>
       </View>
       <Text style={styles.itemDestino}>Destino: {item.pontoDestino}</Text>
       <Text style={styles.itemData}>Registrado em: {dataFormatada}</Text>
-    </View>
+    </TouchableOpacity>
   );
 });
 
@@ -70,7 +70,8 @@ export default function TelaHistoricoDoacoes({ navigation }: Props) {
         data={doacoes}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listaConteudo, conteudoStyle]}
-        renderItem={({ item }) => <DoacaoItem item={item} />}
+        renderItem={({ item }) => <DoacaoItem item={item} 
+        onPress={() => navigation.navigate('DetalheDoacao', { doacaoId: item.id })} />}
         ListEmptyComponent={
           !carregando ? (
             <View style={styles.vazioContainer}>

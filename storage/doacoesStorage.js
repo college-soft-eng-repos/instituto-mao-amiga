@@ -34,6 +34,22 @@ export async function salvarDoacao(doacao) {
   }
 }
 
+// Exclui uma doação
+export async function excluirDoacao(idParaExcluir) {
+  try {
+    const doacoesAtuais = await listarDoacoes();
+
+    const doacoesFiltradas = doacoesAtuais.filter(
+      (item) => String(item.id) !== String(idParaExcluir),
+    );
+
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(doacoesFiltradas));
+    return doacoesFiltradas;
+  } catch (error) {
+    throw error;
+  }
+}
+
 // GERENCIAMENTO DE RASCUNHOS
 export async function salvarRascunho(rascunho) {
   try {
