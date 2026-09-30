@@ -1,37 +1,37 @@
 // src/components/ScreenHeader.tsx
 import React from 'react';
-import { Text, StyleSheet, TextStyle } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 type ScreenHeaderProps = {
   title: string;
-  size?: 'large' | 'medium';
-  style?: TextStyle;
+  size?: 'small' | 'medium' | 'large';
 };
 
-export default function ScreenHeader({
-  title,
-  size = 'large',
-  style,
-}: ScreenHeaderProps) {
+export default function ScreenHeader({ title, size = 'large' }: ScreenHeaderProps) {
   return (
-    <Text style={[size === 'large' ? styles.tituloLarge : styles.tituloMedium, style]}>
-      {title}
-    </Text>
+    <View style={styles.container}>
+      <Text style={[styles.title, size === 'medium' ? styles.mediumTitle : styles.largeTitle]}>
+        {title}
+      </Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  tituloLarge: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1B3A5C',
-    marginBottom: 14,
+  container: {
+    marginBottom: 16,
+    marginTop: 8,
   },
-  tituloMedium: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1B3A5C',
+  title: {
+    color: '#0F172A',
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  largeTitle: {
+    fontSize: 28,
+  },
+  mediumTitle: {
+    fontSize: 20,
     marginTop: 12,
-    marginBottom: 10,
   },
 });

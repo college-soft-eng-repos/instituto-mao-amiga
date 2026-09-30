@@ -65,14 +65,14 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
 
   function confirmarExclusao() {
     if (Platform.OS === 'web') {
-      const confirmado = window.confirm('Tem certeza de que deseja apagar esta doação registada?');
+      const confirmado = window.confirm('Tem certeza de que deseja apagar esta doação registrada?');
       if (confirmado) {
         executarExclusao();
       }
     } else {
       Alert.alert(
         'Excluir doação',
-        'Tem certeza de que deseja apagar esta doação registada?',
+        'Tem certeza de que deseja apagar esta doação registrada?',
         [
           { text: 'Cancelar', style: 'cancel' },
           {
@@ -86,13 +86,11 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
   }
 
   return (
-    /* TouchableOpacity transparente para fechar o modal ao clicar fora do card */
     <TouchableOpacity 
       style={styles.modalOverlay} 
       activeOpacity={1} 
       onPress={() => navigation.goBack()}
     >
-      {/* Container principal do modal (activeOpacity={1} para não fechar ao clicar dentro do card) */}
       <TouchableOpacity 
         style={styles.modalContent} 
         activeOpacity={1} 
@@ -102,7 +100,7 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
 
         {carregando ? (
           <View style={styles.centralizado}>
-            <ActivityIndicator size="large" color="#1B3A5C" />
+            <ActivityIndicator size="large" color="#2563EB" />
           </View>
         ) : !doacao ? (
           <View style={styles.centralizado}>
@@ -113,7 +111,7 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
             <View style={styles.card}>
               <View style={styles.cabecalhoCard}>
                 <View style={styles.iconeContainer}>
-                  <Feather name="package" size={24} color="#1B3A5C" />
+                  <Feather name="package" size={22} color="#2563EB" />
                 </View>
                 <View style={styles.flex1}>
                   <Text style={styles.label}>Tipo do Item</Text>
@@ -124,29 +122,33 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
               <View style={styles.divisor} />
 
               <InfoRow icon="layers" label="Quantidade" value={`${doacao.quantidade} unidades`} />
-              <InfoRow icon="map-pin" label="Ponto de Destino" value={doacao.pontoDestino} />
+              <InfoRow icon="map-pin" label="Ponto de Destino" value={pontoDestinoLimpo(doacao.pontoDestino)} />
               <InfoRow 
                 icon="clock" 
-                label="Data e Hora do Registo" 
+                label="Data e Hora do Registro" 
                 value={new Date(doacao.criadoEm).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'medium' })} 
                 isLast={true} 
               />
             </View>
 
+            {/* Botões lado a lado modernos */}
             <View style={styles.containerBotoes}>
-              <CustomButton
-                title="Editar doação"
-                onPress={() => navigation.navigate('CadastroDoacao', { doacaoId: doacao.id })}
-                variant="primary"
-                icon="edit-3"
-              />
-
-              <CustomButton
-                title="Excluir doação"
-                onPress={confirmarExclusao}
-                variant="danger-outline"
-                icon="trash-2"
-              />
+              <View style={styles.botaoWrapper}>
+                <CustomButton
+                  title="Excluir"
+                  onPress={confirmarExclusao}
+                  variant="danger-outline"
+                  icon="trash-2"
+                />
+              </View>
+              <View style={styles.botaoWrapper}>
+                <CustomButton
+                  title="Editar"
+                  onPress={() => navigation.navigate('CadastrarModal', { doacaoId: doacao.id } )}
+                  variant="primary"
+                  icon="edit-3"
+                />
+              </View>
             </View>
           </View>
         )}
@@ -155,10 +157,14 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
   );
 }
 
+function pontoDestinoLimpo(nome: string) {
+  return nome;
+}
+
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fundo escuro translúcido (efeito blur/overlay)
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -167,13 +173,13 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 480,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 10,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
   },
   centralizado: {
     paddingVertical: 40,
@@ -187,50 +193,55 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 14,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   cabecalhoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
   },
   iconeContainer: {
-    width: 46,
-    height: 46,
+    width: 44,
+    height: 44,
     borderRadius: 12,
-    backgroundColor: '#E8EEF4',
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   label: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#8C98A4',
+    color: '#64748B',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     marginBottom: 2,
   },
   valorDestaque: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#1B3A5C',
+    color: '#0F172A',
   },
   divisor: {
     height: 1,
     backgroundColor: '#E2E8F0',
-    marginVertical: 12,
+    marginVertical: 14,
   },
   erroTexto: {
-    fontSize: 16,
-    color: '#C62828',
+    fontSize: 15,
+    color: '#DC2626',
     textAlign: 'center',
+    fontWeight: '500',
   },
   containerBotoes: {
-    gap: 8,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  botaoWrapper: {
+    flex: 1,
   },
 });

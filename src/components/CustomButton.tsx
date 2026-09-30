@@ -50,7 +50,7 @@ export default function CustomButton({
     switch (variant) {
       case 'secondary':
       case 'outline':
-        return '#1B3A5C';
+        return '#2563EB'; // Atualizado para o Azul Royal do design system
       case 'danger-outline':
         return '#DC3545';
       default:
@@ -80,7 +80,7 @@ export default function CustomButton({
 const styles = StyleSheet.create({
   baseButton: {
     minHeight: 48,
-    borderRadius: 10,
+    borderRadius: 12, // Arredondamento padronizado com os inputs e modais
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -94,25 +94,25 @@ const styles = StyleSheet.create({
   iconStyle: {
     marginRight: 8,
   },
-  // Variantes
+  // Variantes atualizadas com a paleta de Azul Royal (#2563EB)
   btnPrimary: {
-    backgroundColor: '#1B3A5C',
-    shadowColor: '#1B3A5C',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: '#2563EB',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   textPrimary: {
     color: '#FFFFFF',
   },
   btnSecondary: {
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: '#1B3A5C',
+    borderColor: '#BFDBFE',
   },
   textSecondary: {
-    color: '#1B3A5C',
+    color: '#2563EB',
   },
   btnOutline: {
     backgroundColor: 'transparent',

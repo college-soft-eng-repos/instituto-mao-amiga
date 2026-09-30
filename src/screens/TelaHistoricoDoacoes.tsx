@@ -3,19 +3,24 @@ import {
   View,
   StyleSheet,
   FlatList,
+  Text,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import type { CompositeScreenProps } from '@react-navigation/native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../App';
+import type { RootStackParamList, TabParamList } from '../App';
 import { listarDoacoes } from '../services/doacoesStorage';
 import ScreenContainer from '../components/ScreenContainer';
-import ScreenHeader from '../components/ScreenHeader';
 import ResumoDoacoesCard from '../components/ResumoDoacoesCard';
 import ListItemCard from '../components/ListItemCard';
 import SearchInput from '../components/SearchInput';
 import EmptyState from '../components/EmptyState';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'HistoricoDoacoes'>;
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, 'Historico'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 type Doacao = {
   id: string;
@@ -92,21 +97,38 @@ export default function TelaHistoricoDoacoes({ navigation }: Props) {
         contentContainerStyle={styles.listaConteudo}
         ListHeaderComponent={
           <View style={styles.headerContainer}>
-            <ScreenHeader title="Minhas Doações" />
+            {/* Bloco de Título e Subtítulo com respiro elegante */}
+            <View style={styles.tituloContainer}>
+              <Text style={styles.tituloPrincipal}>Minhas Doações</Text>
+              <Text style={styles.subtituloPrincipal}>
+                Acompanhe o histórico e o resumo das suas entregas realizadas
+              </Text>
+            </View>
 
             {resumoDoacoes && (
-              <ResumoDoacoesCard
-                totalGeralUnidades={resumoDoacoes.totalGeralUnidades}
-                totalGeralDoacoes={resumoDoacoes.totalGeralDoacoes}
-                itensOrdenados={resumoDoacoes.itensOrdenados}
-              />
+              <View style={styles.resumoWrapper}>
+                <ResumoDoacoesCard
+                  totalGeralUnidades={resumoDoacoes.totalGeralUnidades}
+                  totalGeralDoacoes={resumoDoacoes.totalGeralDoacoes}
+                  itensOrdenados={resumoDoacoes.itensOrdenados}
+                />
+              </View>
             )}
 
-            <SearchInput
-              value={busca}
-              onChangeText={setBusca}
-              placeholder="Buscar por tipo de item..."
-            />
+            <View style={styles.searchWrapper}>
+              <SearchInput
+                value={busca}
+                onChangeText={setBusca}
+                placeholder="Buscar por tipo de item..."
+              />
+            </View>
+
+            <View style={styles.secaoHeaderRow}>
+              <Text style={styles.secaoTitulo}>Registros</Text>
+              <View style={styles.contadorBadge}>
+                <Text style={styles.contadorTexto}>{doacoesFiltradas.length} doações</Text>
+              </View>
+            </View>
           </View>
         }
         renderItem={({ item }) => {
@@ -145,7 +167,7 @@ export default function TelaHistoricoDoacoes({ navigation }: Props) {
                 actionTitle={doacoes.length === 0 ? 'Cadastrar primeira doação' : undefined}
                 onActionPress={
                   doacoes.length === 0
-                    ? () => navigation.navigate('CadastroDoacao')
+                    ? () => (navigation.navigate as any)('MainTabs', { screen: 'Cadastrar' })
                     : undefined
                 }
               />
@@ -158,18 +180,65 @@ export default function TelaHistoricoDoacoes({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    paddingTop: 16,
-    paddingBottom: 4,
-    paddingHorizontal: 16,
-  },
   listaConteudo: {
-    paddingBottom: 24,
+    paddingTop: 28,
+    paddingBottom: 40,
+    backgroundColor: '#F8FAFC',
+  },
+  headerContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 4,
+  },
+  tituloContainer: {
+    marginBottom: 20,
+  },
+  tituloPrincipal: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.6,
+  },
+  subtituloPrincipal: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  resumoWrapper: {
+    marginBottom: 20,
+  },
+  searchWrapper: {
+    marginBottom: 24,
+  },
+  secaoHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  secaoTitulo: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  contadorBadge: {
+    backgroundColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  contadorTexto: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
   },
   itemWrapper: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   emptyWrapper: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    marginTop: 20,
   },
 });

@@ -12,7 +12,9 @@ type ModalHeaderProps = {
 export default function ModalHeader({ title, onClose }: ModalHeaderProps) {
   return (
     <View style={styles.container}>
-      <ScreenHeader title={title} />
+      <View style={styles.tituloWrapper}>
+        <ScreenHeader title={title} />
+      </View>
       <TouchableOpacity onPress={onClose} style={styles.botaoFechar} activeOpacity={0.7}>
         <Feather name="x" size={20} color="#4A5568" />
       </TouchableOpacity>
@@ -24,8 +26,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'center', // Alinha perfeitamente no eixo vertical
+    marginBottom: 16,
+  },
+  tituloWrapper: {
+    flex: 1,
   },
   botaoFechar: {
     width: 36,
@@ -34,6 +39,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
   },
 });

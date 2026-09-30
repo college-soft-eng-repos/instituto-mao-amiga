@@ -20,103 +20,147 @@ export default function ResumoDoacoesCard({
   itensOrdenados,
 }: ResumoDoacoesCardProps) {
   return (
-    <View style={styles.resumoCard}>
-      <View style={styles.resumoTopo}>
-        <View style={styles.iconeHeaderResumo}>
-          <Feather name="bar-chart-2" size={18} color="#1B3A5C" />
+    <View style={styles.cardContainer}>
+      {/* Linha Superior: Ícone + Métricas Principais Lado a Lado */}
+      <View style={styles.headerRow}>
+        <View style={styles.iconeContainer}>
+          <Feather name="bar-chart-2" size={16} color="#2563EB" />
         </View>
-        <View>
-          <Text style={styles.resumoTitulo}>Resumo do Instituto</Text>
-          <Text style={styles.resumoSubtitulo}>
-            <Text style={styles.textoBold}>{totalGeralUnidades}</Text> unidades no total ({totalGeralDoacoes} {totalGeralDoacoes === 1 ? 'registro' : 'registros'})
+        <Text style={styles.tituloSecao}>Resumo Geral</Text>
+      </View>
+
+      <View style={styles.metricasRow}>
+        <View style={styles.metricaItem}>
+          <Text style={styles.metricaValor}>{totalGeralUnidades}</Text>
+          <Text style={styles.metricaLabel}>Unidades</Text>
+        </View>
+
+        <View style={styles.divisorVertical} />
+
+        <View style={styles.metricaItem}>
+          <Text style={styles.metricaValor}>{totalGeralDoacoes}</Text>
+          <Text style={styles.metricaLabel}>
+            {totalGeralDoacoes === 1 ? 'Registro' : 'Registros'}
           </Text>
         </View>
       </View>
 
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
-        contentContainerStyle={styles.pillsContainer}
-      >
-        {itensOrdenados.map((item, index) => (
-          <View key={index} style={styles.pill}>
-            <Feather name="package" size={12} color="#1B3A5C" />
-            <Text style={styles.pillTexto}>
-              <Text style={styles.pillDestaque}>{item.tipo}:</Text> {item.quantidade} un. ({item.totalDoacoes} {item.totalDoacoes === 1 ? 'doação' : 'doações'})
-            </Text>
-          </View>
-        ))}
-      </ScrollView>
+      {/* Linha Inferior: Pílulas Compactas com a quantidade de unidades e o número de doações */}
+      {itensOrdenados.length > 0 && (
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.pillsScrollContainer}
+        >
+          {itensOrdenados.map((item, index) => (
+            <View key={index} style={styles.pill}>
+              <View style={styles.bulletPequeno} />
+              <Text style={styles.pillTexto}>
+                <Text style={styles.pillDestaque}>{item.tipo}:</Text> {item.quantidade} un. ({item.totalDoacoes} {item.totalDoacoes === 1 ? 'x' : 'x'})
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  resumoCard: {
+  cardContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F1F5F9',
     padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
+    marginBottom: 8,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
     elevation: 2,
   },
-  resumoTopo: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
     marginBottom: 12,
   },
-  iconeHeaderResumo: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: '#E8EEF4',
+  iconeContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  resumoTitulo: {
-    fontSize: 14,
+  tituloSecao: {
+    fontSize: 12,
     fontWeight: '700',
-    color: '#8C98A4',
+    color: '#64748B',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
-  resumoSubtitulo: {
-    fontSize: 15,
-    color: '#212529',
-    marginTop: 2,
+  metricasRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  textoBold: {
-    fontWeight: 'bold',
-    color: '#1B3A5C',
+  metricaItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: 6,
   },
-  pillsContainer: {
-    gap: 8,
-    paddingTop: 4,
-    paddingBottom: 2,
+  metricaValor: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  metricaLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+  },
+  divisorVertical: {
+    width: 1,
+    height: '60%',
+    backgroundColor: '#CBD5E1',
+  },
+  pillsScrollContainer: {
+    gap: 6,
+    paddingTop: 2,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  bulletPequeno: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#2563EB',
   },
   pillTexto: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#475569',
   },
   pillDestaque: {
-    fontWeight: '600',
-    color: '#1B3A5C',
+    fontWeight: '700',
+    color: '#0F172A',
   },
 });

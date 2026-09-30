@@ -1,38 +1,58 @@
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import TelaListaPontos from '../src/screens/TelaListaPontos';
-import TelaDetalhePonto from '../src/screens/TelaDetalhePonto';
-import TelaCadastroDoacao from '../src/screens/TelaCadastroDoacao';
-import TelaHistoricoDoacoes from '../src/screens/TelaHistoricoDoacoes';
-import TelaDetalheDoacao from '../src/screens/TelaDetalheDoacao';
+
+import TelaListaPontos from './screens/TelaListaPontos';
+import TelaDetalhePonto from './screens/TelaDetalhePonto';
+import TelaCadastroDoacao from './screens/TelaCadastroDoacao';
+import TelaHistoricoDoacoes from './screens/TelaHistoricoDoacoes';
+import TelaDetalheDoacao from './screens/TelaDetalheDoacao';
+import CustomTabBar from './components/CustomTabBar'; // Importando a barra customizada
+
+export type TabParamList = {
+  Inicio: undefined;
+  Historico: undefined;
+};
 
 export type RootStackParamList = {
-  Lista: undefined;
+  MainTabs: undefined;
+  CadastrarModal: { doacaoId?: string } | undefined;
   Detalhe: { pontoId: string };
-  CadastroDoacao: { doacaoId?: string } | undefined;
-  HistoricoDoacoes: undefined;
   DetalheDoacao: { doacaoId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
+
+function MainTabNavigator() {
+  return (
+    <Tab.Navigator
+      initialRouteName="Inicio"
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tab.Screen name="Inicio" component={TelaListaPontos} />
+      <Tab.Screen name="Historico" component={TelaHistoricoDoacoes} />
+    </Tab.Navigator>
+  );
+}
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator 
-          initialRouteName="Lista"
           screenOptions={{
             headerShown: false,
             presentation: 'transparentModal',
             animation: 'fade',
           }}
         >
-          <Stack.Screen name="Lista" component={TelaListaPontos} />
-          <Stack.Screen name="HistoricoDoacoes" component={TelaHistoricoDoacoes} options={{ headerShown: true, title: 'Histórico de doações' }} />
+          <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+          <Stack.Screen name="CadastrarModal" component={TelaCadastroDoacao} />
           <Stack.Screen name="Detalhe" component={TelaDetalhePonto} />
-          <Stack.Screen name="CadastroDoacao" component={TelaCadastroDoacao} />
           <Stack.Screen name="DetalheDoacao" component={TelaDetalheDoacao} />
         </Stack.Navigator>
       </NavigationContainer>

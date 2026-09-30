@@ -20,7 +20,10 @@ export default function ListItemCard({
   onPress,
 }: ListItemCardProps) {
   return (
-    <TouchableOpacity style={styles.cardContainer} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.cardContainer} onPress={onPress} activeOpacity={0.85}>
+      {/* Indicador visual lateral */}
+      <View style={styles.indicadorLateral} />
+
       <View style={styles.cardConteudo}>
         <View style={styles.headerLinha}>
           <Text style={styles.titulo} numberOfLines={1}>{titulo}</Text>
@@ -34,10 +37,16 @@ export default function ListItemCard({
         <Text style={styles.subtitulo} numberOfLines={2}>{subtitulo}</Text>
 
         {detalheRodape && (
-          <Text style={styles.detalheRodape}>{detalheRodape}</Text>
+          <View style={styles.rodapeContainer}>
+            <Feather name="clock" size={13} color="#94A3B8" style={styles.iconeRodape} />
+            <Text style={styles.detalheRodape}>{detalheRodape}</Text>
+          </View>
         )}
       </View>
-      <Feather name={iconeNome} size={18} color="#A0AEC0" style={styles.iconeSeta} />
+
+      <View style={styles.setaContainer}>
+        <Feather name={iconeNome} size={16} color="#CBD5E1" />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -45,18 +54,25 @@ export default function ListItemCard({
 const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 16,
-    marginBottom: 10,
+    borderColor: '#F1F5F9',
+    padding: 18,
+    marginBottom: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  indicadorLateral: {
+    width: 4,
+    height: '70%',
+    backgroundColor: '#2563EB',
+    borderRadius: 4,
+    marginRight: 14,
   },
   cardConteudo: {
     flex: 1,
@@ -65,38 +81,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   titulo: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1B3A5C',
+    fontWeight: '800',
+    color: '#0F172A',
     flex: 1,
     marginRight: 8,
+    letterSpacing: -0.3,
   },
   subtitulo: {
-    fontSize: 14,
-    color: '#4A5568',
-    marginBottom: 4,
-    lineHeight: 20,
+    fontSize: 13,
+    color: '#475569',
+    marginBottom: 10,
+    lineHeight: 18,
+    fontWeight: '400',
+  },
+  rodapeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  iconeRodape: {
+    marginRight: 5,
   },
   detalheRodape: {
     fontSize: 12,
     color: '#94A3B8',
-    marginTop: 2,
+    fontWeight: '500',
   },
   badgeContainer: {
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   badgeTexto: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#2E7D32',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#16A34A',
   },
-  iconeSeta: {
+  setaContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 8,
   },
 });

@@ -3,13 +3,15 @@ import {
   View,
   StyleSheet,
   FlatList,
+  Text,
 } from 'react-native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { CompositeScreenProps } from '@react-navigation/native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { TabParamList, RootStackParamList } from '../App';
 import ScreenContainer from '../components/ScreenContainer';
-import ScreenHeader from '../components/ScreenHeader';
 import ListItemCard from '../components/ListItemCard';
 import SearchInput from '../components/SearchInput';
-import CustomButton from '../components/CustomButton';
 import EmptyState from '../components/EmptyState';
 
 export type Ponto = {
@@ -79,19 +81,14 @@ export const pontosMock: Ponto[] = [
   },
 ];
 
-type RootStackParamList = {
-  Lista: undefined;
-  Detalhe: { pontoId: string };
-  CadastroDoacao: undefined;
-  HistoricoDoacoes: undefined;
-};
-
-type Props = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Lista'>;
-};
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, 'Inicio'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 export default function TelaListaPontos({ navigation }: Props) {
   const [busca, setBusca] = useState('');
+  
   const pontosFiltrados = useMemo(() => {
     return pontosMock.filter((ponto) =>
       ponto.nome.toLowerCase().includes(busca.toLowerCase().trim())
@@ -108,27 +105,27 @@ export default function TelaListaPontos({ navigation }: Props) {
         contentContainerStyle={styles.listaConteudo}
         ListHeaderComponent={
           <View style={styles.cabecalho}>
-            <ScreenHeader title="Buscar Pontos" />
+            <View style={styles.tituloContainer}>
+              <Text style={styles.tituloPrincipal}>Pontos de Coleta</Text>
+              <Text style={styles.subtituloPrincipal}>
+                Selecione um local para ver detalhes ou registrar entregas
+              </Text>
+            </View>
             
-            <SearchInput
-              value={busca}
-              onChangeText={setBusca}
-              placeholder="Buscar pontos..."
-            />
-            
-            <CustomButton
-              title="+ Cadastrar doação"
-              onPress={() => navigation.navigate('CadastroDoacao')}
-              variant="primary"
-            />
+            <View style={styles.searchWrapper}>
+              <SearchInput
+                value={busca}
+                onChangeText={setBusca}
+                placeholder="Pesquisar por nome do ponto..."
+              />
+            </View>
 
-            <CustomButton
-              title="Ver histórico de doações"
-              onPress={() => navigation.navigate('HistoricoDoacoes')}
-              variant="secondary"
-            />
-
-            <ScreenHeader title="Todos os Pontos" size="medium" />
+            <View style={styles.secaoHeaderRow}>
+              <Text style={styles.secaoTitulo}>Locais Disponíveis</Text>
+              <View style={styles.contadorBadge}>
+                <Text style={styles.contadorTexto}>{pontosFiltrados.length} encontrados</Text>
+              </View>
+            </View>
           </View>
         }
         renderItem={({ item }) => (
@@ -146,7 +143,7 @@ export default function TelaListaPontos({ navigation }: Props) {
             <EmptyState
               icon="search"
               title={`Nenhum ponto encontrado para "${busca}".`}
-              subtitle="Tente pesquisar por outro nome de ponto de recolha."
+              subtitle="Tente pesquisar por outro termo ou limpe o campo."
             />
           </View>
         }
@@ -158,19 +155,63 @@ export default function TelaListaPontos({ navigation }: Props) {
 const styles = StyleSheet.create({
   lista: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
   listaConteudo: {
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingTop: 28,
+    paddingBottom: 40,
   },
   cabecalho: {
-    marginBottom: 4,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  tituloContainer: {
+    marginBottom: 20,
+  },
+  tituloPrincipal: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.6,
+  },
+  subtituloPrincipal: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  searchWrapper: {
+    marginBottom: 24,
+  },
+  secaoHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  secaoTitulo: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  contadorBadge: {
+    backgroundColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  contadorTexto: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
   },
   itemWrapper: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   emptyWrapper: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    marginTop: 20,
   },
 });

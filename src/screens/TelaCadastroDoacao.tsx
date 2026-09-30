@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { pontosMock } from './TelaListaPontos';
@@ -24,7 +25,10 @@ import {
   limparRascunho 
 } from '../services/doacoesStorage';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'CadastroDoacao'>;
+// Atualizado para suportar a chamada direta via Stack Modal ou Tab
+type Props = NativeStackScreenProps<RootStackParamList, 'CadastrarModal'> & {
+  route: { params?: { doacaoId?: string } };
+};
 
 export default function TelaCadastroDoacao({ route, navigation }: Props) {
   const [tipoItem, setTipoItem] = useState('');
@@ -158,7 +162,6 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
         activeOpacity={1} 
         onPress={(e) => e.stopPropagation()}
       >
-        {/* Cabeçalho fixo no topo do modal */}
         <ModalHeader 
           title={isEdicao ? 'Editar doação' : 'Cadastrar doação'} 
           onClose={() => navigation.goBack()} 
@@ -166,10 +169,8 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.flex}
         >
           <ScrollView
-            style={styles.flex}
             contentContainerStyle={styles.conteudo}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -178,7 +179,7 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Ex.: arroz, roupa, leite"
-              placeholderTextColor="#8C98A4"
+              placeholderTextColor="#94A3B8"
               value={tipoItem}
               onChangeText={setTipoItem}
               returnKeyType="next"
@@ -190,7 +191,7 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
               ref={inputQuantidadeRef}
               style={styles.input}
               placeholder="Ex.: 10"
-              placeholderTextColor="#8C98A4"
+              placeholderTextColor="#94A3B8"
               value={quantidade}
               onChangeText={setQuantidade}
               keyboardType="number-pad"
@@ -200,7 +201,6 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
 
             <Text style={styles.rotulo}>Ponto de destino</Text>
             
-            {/* Lista compacta de pontos com rolagem interna */}
             <ScrollView 
               style={styles.trayContainer} 
               nestedScrollEnabled={true}
@@ -227,18 +227,21 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
             {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
 
             <View style={styles.containerBotoes}>
-              <CustomButton
-                title={isEdicao ? 'Salvar alterações' : 'Registrar doação'}
-                onPress={validarESalvar}
-                variant="primary"
-                icon={isEdicao ? 'check' : 'plus-circle'}
-              />
-
-              <CustomButton
-                title="Cancelar"
-                onPress={() => navigation.goBack()}
-                variant="outline"
-              />
+              <View style={styles.botaoWrapper}>
+                <CustomButton
+                  title="Cancelar"
+                  onPress={() => navigation.goBack()}
+                  variant="outline"
+                />
+              </View>
+              <View style={styles.botaoWrapper}>
+                <CustomButton
+                  title={isEdicao ? 'Salvar' : 'Registrar'}
+                  onPress={validarESalvar}
+                  variant="primary"
+                  icon={isEdicao ? 'check' : 'plus-circle'}
+                />
+              </View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -250,87 +253,92 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)', // Fundo translúcido escuro perfeitamente visível
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
   },
   modalContent: {
     width: '100%',
-    maxWidth: 500,
-    maxHeight: '85%', // <-- Altura máxima dinâmica (só cresce até 85% se precisar)
+    maxWidth: 480,
+    maxHeight: '85%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  flex: {
-    // Removido o flex: 1 daqui para não forçar altura total
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
   },
   conteudo: {
-    paddingBottom: 8, // Padding reduzido para ficar bem ajustado
+    paddingBottom: 4,
   },
   rotulo: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#8C98A4',
+    color: '#64748B',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     marginBottom: 6,
-    marginTop: 12,
+    marginTop: 14,
   },
   input: {
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     fontSize: 15,
-    color: '#212529',
-    backgroundColor: '#F8F9FA',
-    minHeight: 44,
+    color: '#0F172A',
+    backgroundColor: '#F8FAFC',
+    minHeight: 48,
   },
   trayContainer: {
-    maxHeight: 120, // Altura compacta da listagem de pontos
+    maxHeight: 130,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
-    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
     padding: 6,
   },
   pontoChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
     marginBottom: 4,
   },
   pontoChipSelecionado: {
-    backgroundColor: '#E8EEF4',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#2563EB',
   },
   pontoTexto: {
-    fontSize: 13,
-    color: '#4A5568',
+    fontSize: 14,
+    color: '#334155',
   },
   pontoTextoSelecionado: {
     fontWeight: '600',
-    color: '#1B3A5C',
+    color: '#2563EB',
   },
   erro: {
-    color: '#C62828',
+    color: '#DC2626',
     fontSize: 13,
-    marginTop: 8,
+    marginTop: 10,
+    fontWeight: '500',
   },
   sucesso: {
-    color: '#2E7D32',
+    color: '#16A34A',
     fontSize: 13,
-    marginTop: 8,
+    marginTop: 10,
+    fontWeight: '500',
   },
   containerBotoes: {
-    marginTop: 20,
-    gap: 8,
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  botaoWrapper: {
+    flex: 1,
   },
 });

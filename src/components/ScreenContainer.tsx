@@ -1,25 +1,17 @@
 // src/components/ScreenContainer.tsx
-import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import React, { ReactNode } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
 
 type ScreenContainerProps = {
-  children: React.ReactNode;
-  style?: ViewStyle;
+  children: ReactNode;
   withPadding?: boolean;
 };
 
-export default function ScreenContainer({
-  children,
-  style,
-  withPadding = true,
-}: ScreenContainerProps) {
-  const { conteudoStyle } = useConteudoResponsivo();
-
+export default function ScreenContainer({ children, withPadding = true }: ScreenContainerProps) {
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right', 'top']}>
-      <View style={[styles.inner, withPadding && styles.defaultPadding, conteudoStyle, style]}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={[styles.container, withPadding && styles.withPadding]}>
         {children}
       </View>
     </SafeAreaView>
@@ -27,15 +19,15 @@ export default function ScreenContainer({
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F8FAFC', // Fundo geral unificado e refinado
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F8FAFC',
   },
-  inner: {
-    flex: 1,
-  },
-  defaultPadding: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+  withPadding: {
+    paddingHorizontal: 20, // Espaçamento lateral padrão limpo e consistente
   },
 });

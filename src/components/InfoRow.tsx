@@ -14,7 +14,8 @@ export default function InfoRow({ icon, label, value, isLast = false }: InfoRowP
   return (
     <View>
       <View style={styles.row}>
-        <Feather name={icon} size={18} color="#6C757D" style={styles.icon} />
+        {/* Ícone utilizando a cor padrão moderna do design system */}
+        <Feather name={icon} size={18} color="#2563EB" style={styles.icon} />
         <View style={styles.content}>
           <Text style={styles.label}>{label}</Text>
           <Text style={styles.value}>{value}</Text>
@@ -40,20 +41,20 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#8C98A4',
+    color: '#64748B', // Slate refinado para os rótulos em caixa alta
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     marginBottom: 2,
   },
   value: {
     fontSize: 15,
-    color: '#212529',
+    color: '#0F172A', // Slate escuro para alta legibilidade dos valores
     fontWeight: '500',
     lineHeight: 20,
   },
   divisor: {
     height: 1,
-    backgroundColor: '#F1F3F5',
+    backgroundColor: '#E2E8F0', // Divisor sutil alinhado aos cards do app
     marginVertical: 14,
   },
 });

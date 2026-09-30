@@ -2,7 +2,6 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { pontosMock, type Ponto } from './TelaListaPontos';
 import ModalHeader from '../components/ModalHeader';
-import ScreenHeader from '../components/ScreenHeader';
 import InfoRow from '../components/InfoRow';
 
 type RootStackParamList = {
@@ -24,13 +23,14 @@ function DetalhePonto({ ponto, navigation }: { ponto: Ponto; navigation: any }) 
         activeOpacity={1} 
         onPress={(e) => e.stopPropagation()}
       >
-        <ModalHeader title="Informações do Ponto" onClose={() => navigation.goBack()} />
+        <ModalHeader title="Detalhes do Ponto" onClose={() => navigation.goBack()} />
 
-        <ScreenHeader title={ponto.nome} size="medium" />
-        
-        <InfoRow icon="map-pin" label="Endereço" value={ponto.endereco} />
-        <InfoRow icon="clock" label="Dias e horários" value={ponto.diasHorarios} />
-        <InfoRow icon="info" label="Recebe / distribui" value={ponto.recebeDistribui} isLast={true} />
+        <View style={styles.card}>
+          <InfoRow icon="map-pin" label="Nome do Ponto" value={ponto.nome} />
+          <InfoRow icon="navigation" label="Endereço" value={ponto.endereco} />
+          <InfoRow icon="clock" label="Dias e Horários" value={ponto.diasHorarios} />
+          <InfoRow icon="info" label="Recebe / Distribui" value={ponto.recebeDistribui} isLast={true} />
+        </View>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -45,7 +45,6 @@ export default function TelaDetalhePonto({ route, navigation }: Props) {
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => navigation.goBack()}>
         <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={(e) => e.stopPropagation()}>
           <ModalHeader title="Aviso" onClose={() => navigation.goBack()} />
-          <ScreenHeader title="Ponto não encontrado." size="medium" />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -57,7 +56,7 @@ export default function TelaDetalhePonto({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -66,12 +65,20 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 480,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 10,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  card: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 16,
+    marginTop: 4,
   },
 });

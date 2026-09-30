@@ -21,8 +21,9 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <View style={styles.container}>
+      {/* Container do ícone atualizado com a identidade em Azul Royal */}
       <View style={styles.iconContainer}>
-        <Feather name={icon} size={32} color="#94A3B8" />
+        <Feather name={icon} size={28} color="#2563EB" />
       </View>
       <Text style={styles.title}>{title}</Text>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -48,10 +49,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#F1F5F9',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EFF6FF', // Fundo azul suave moderno
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -59,13 +62,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#334155',
+    color: '#0F172A', // Tom Slate escuro padrão do app
     textAlign: 'center',
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#64748B', // Slate intermediário limpo
     textAlign: 'center',
     marginBottom: 20,
     lineHeight: 20,
