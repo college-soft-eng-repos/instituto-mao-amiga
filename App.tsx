@@ -5,12 +5,14 @@ import TelaListaPontos from './TelaListaPontos';
 import TelaDetalhePonto from './TelaDetalhePonto';
 import TelaCadastroDoacao from './TelaCadastroDoacao';
 import TelaHistoricoDoacoes from './TelaHistoricoDoacoes';
+import TelaDetalheDoacao from './TelaDetalheDoacao';
 
 export type RootStackParamList = {
   Lista: undefined;
   Detalhe: { pontoId: string };
   CadastroDoacao: undefined;
   HistoricoDoacoes: undefined;
+  DetalheDoacao: { doacaoId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -39,6 +41,11 @@ export default function App() {
             name="HistoricoDoacoes"
             component={TelaHistoricoDoacoes}
             options={{ title: 'Histórico de doações' }}
+          />
+          <Stack.Screen
+            name="DetalheDoacao"
+            component={TelaDetalheDoacao}
+            options={{ title: 'Detalhe da doação' }}
           />
         </Stack.Navigator>
       </NavigationContainer>
