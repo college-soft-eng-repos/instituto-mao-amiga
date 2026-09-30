@@ -3,18 +3,19 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Alert,
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { listarDoacoes, excluirDoacao } from '../services/doacoesStorage';
 import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
+import CustomButton from '../components/CustomButton';
+import ScreenContainer from '../components/ScreenContainer';
+import InfoRow from '../components/InfoRow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetalheDoacao'>;
 
@@ -32,7 +33,6 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
   const [doacao, setDoacao] = useState<Doacao | null>(null);
   const [carregando, setCarregando] = useState(true);
 
-  // Substituímos o useEffect simples por useFocusEffect para recarregar ao voltar da edição
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
@@ -108,13 +108,12 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-      <View style={[styles.conteudo, conteudoStyle]}>
+    <ScreenContainer>
+      <View style={styles.conteudoInterno}>
         
-        {/* Bloco Principal / Card de Detalhes */}
+        {/* Bloco Principal / Card de Detalhes limpo com InfoRow */}
         <View style={styles.card}>
           
-          {/* Cabeçalho do Card com Destaque */}
           <View style={styles.cabecalhoCard}>
             <View style={styles.iconeContainer}>
               <Feather name="package" size={24} color="#1B3A5C" />
@@ -127,75 +126,59 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
 
           <View style={styles.divisor} />
 
-          {/* Linha: Quantidade */}
-          <View style={styles.linhaDetalhe}>
-            <Feather name="layers" size={18} color="#6C757D" style={styles.iconeLinha} />
-            <View style={styles.flex1}>
-              <Text style={styles.label}>Quantidade</Text>
-              <Text style={styles.valor}>{doacao.quantidade} unidades</Text>
-            </View>
-          </View>
+          <InfoRow
+            icon="layers"
+            label="Quantidade"
+            value={`${doacao.quantidade} unidades`}
+          />
 
-          <View style={styles.divisor} />
+          <InfoRow
+            icon="map-pin"
+            label="Ponto de Destino"
+            value={doacao.pontoDestino}
+          />
 
-          {/* Linha: Ponto de Destino */}
-          <View style={styles.linhaDetalhe}>
-            <Feather name="map-pin" size={18} color="#6C757D" style={styles.iconeLinha} />
-            <View style={styles.flex1}>
-              <Text style={styles.label}>Ponto de Destino</Text>
-              <Text style={styles.valor}>{doacao.pontoDestino}</Text>
-            </View>
-          </View>
-
-          <View style={styles.divisor} />
-
-          {/* Linha: Data e Hora */}
-          <View style={styles.linhaDetalhe}>
-            <Feather name="clock" size={18} color="#6C757D" style={styles.iconeLinha} />
-            <View style={styles.flex1}>
-              <Text style={styles.label}>Data e Hora do Registo</Text>
-              <Text style={styles.valorData}>{dataFormatada}</Text>
-            </View>
-          </View>
-
+          <InfoRow
+            icon="clock"
+            label="Data e Hora do Registo"
+            value={dataFormatada}
+            isLast={true}
+          />
         </View>
 
-        {/* Rodapé com Ações */}
+        {/* Rodapé com botões padronizados */}
         <View style={styles.containerBotoes}>
-          <TouchableOpacity
-            style={styles.botaoEditar}
+          <CustomButton
+            title="Editar doação"
             onPress={() => navigation.navigate('CadastroDoacao', { doacaoId: doacao.id })}
-          >
-            <Feather name="edit-3" size={18} color="#FFFFFF" style={styles.iconeBotao} />
-            <Text style={styles.botaoEditarTexto}>Editar doação</Text>
-          </TouchableOpacity>
+            variant="primary"
+            icon="edit-3"
+          />
 
-          <TouchableOpacity style={styles.botaoExcluirOutline} onPress={confirmarExclusao}>
-            <Feather name="trash-2" size={18} color="#DC3545" style={styles.iconeBotao} />
-            <Text style={styles.botaoExcluirTextoOutline}>Excluir doação</Text>
-          </TouchableOpacity>
+          <CustomButton
+            title="Excluir doação"
+            onPress={confirmarExclusao}
+            variant="danger-outline"
+            icon="trash-2"
+          />
         </View>
 
       </View>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
   centralizado: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
-  conteudo: {
+  conteudoInterno: {
     flex: 1,
-    padding: 16,
-    justifyContent: 'space-between', // Distribui perfeitamente topo e rodapé se houver espaço
+    justifyContent: 'space-between',
+    paddingBottom: 16,
   },
   flex1: {
     flex: 1,
@@ -204,12 +187,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#EAEAEA',
+    borderColor: '#E2E8F0',
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: { ios: 0.04, web: 0.04 } as any,
-    shadowRadius: 8,
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
     elevation: 2,
   },
   cabecalhoCard: {
@@ -225,19 +208,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  linhaDetalhe: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-  },
-  iconeLinha: {
-    marginTop: 2,
-  },
-  divisor: {
-    height: 1,
-    backgroundColor: '#F1F3F5',
-    marginVertical: 14,
-  },
   label: {
     fontSize: 11,
     fontWeight: '700',
@@ -246,21 +216,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 2,
   },
-  valor: {
-    fontSize: 15,
-    color: '#212529',
-    fontWeight: '500',
-    lineHeight: 20,
-  },
   valorDestaque: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1B3A5C',
   },
-  valorData: {
-    fontSize: 14,
-    color: '#6C757D',
-    lineHeight: 18,
+  divisor: {
+    height: 1,
+    backgroundColor: '#F1F3F5',
+    marginVertical: 14,
   },
   erroTexto: {
     fontSize: 16,
@@ -268,45 +232,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   containerBotoes: {
-    gap: 10,
+    gap: 8,
     marginTop: 20,
-  },
-  botaoEditar: {
-    backgroundColor: '#1B3A5C',
-    borderRadius: 10,
-    minHeight: 48,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    shadowColor: '#1B3A5C',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  botaoEditarTexto: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  botaoExcluirOutline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#DC3545',
-    borderRadius: 10,
-    minHeight: 48,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  botaoExcluirTextoOutline: {
-    color: '#DC3545',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  iconeBotao: {
-    marginRight: 2,
   },
 });

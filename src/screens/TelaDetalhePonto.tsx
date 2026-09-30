@@ -1,7 +1,9 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { pontosMock, type Ponto } from './TelaListaPontos';
-import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
+import ScreenContainer from '../components/ScreenContainer';
+import ScreenHeader from '../components/ScreenHeader';
+import InfoRow from '../components/InfoRow';
 
 type RootStackParamList = {
   Lista: undefined;
@@ -11,22 +13,29 @@ type RootStackParamList = {
 type Props = NativeStackScreenProps<RootStackParamList, 'Detalhe'>;
 
 function DetalhePonto({ ponto }: { ponto: Ponto }) {
-  const { conteudoStyle } = useConteudoResponsivo();
-
   return (
-    // Fundo branco na tela inteira; a largura limitada fica só no miolo
-    // (senão aparece faixa cinza dos lados no desktop — fundo do navigator).
-    <View style={styles.tela}>
-      <View style={[styles.conteudo, conteudoStyle]}>
-        <Text style={styles.nome}>{ponto.nome}</Text>
-        <Text style={styles.rotulo}>Endereço</Text>
-        <Text style={styles.texto}>{ponto.endereco}</Text>
-        <Text style={styles.rotulo}>Dias e horários</Text>
-        <Text style={styles.texto}>{ponto.diasHorarios}</Text>
-        <Text style={styles.rotulo}>Recebe / distribui</Text>
-        <Text style={styles.texto}>{ponto.recebeDistribui}</Text>
-      </View>
-    </View>
+    <ScreenContainer>
+      <ScreenHeader title={ponto.nome} />
+      
+      <InfoRow
+        icon="map-pin"
+        label="Endereço"
+        value={ponto.endereco}
+      />
+      
+      <InfoRow
+        icon="clock"
+        label="Dias e horários"
+        value={ponto.diasHorarios}
+      />
+      
+      <InfoRow
+        icon="info"
+        label="Recebe / distribui"
+        value={ponto.recebeDistribui}
+        isLast={true}
+      />
+    </ScreenContainer>
   );
 }
 
@@ -36,42 +45,11 @@ export default function TelaDetalhePonto({ route }: Props) {
 
   if (!ponto) {
     return (
-      <View style={styles.tela}>
-        <Text style={styles.texto}>Ponto não encontrado.</Text>
-      </View>
+      <ScreenContainer>
+        <ScreenHeader title="Ponto não encontrado." />
+      </ScreenContainer>
     );
   }
 
   return <DetalhePonto ponto={ponto} />;
 }
-
-const styles = StyleSheet.create({
-  tela: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  conteudo: {
-    flex: 1,
-    paddingVertical: 20,
-  },
-  nome: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1B3A5C',
-    marginBottom: 16,
-    flexShrink: 1,
-  },
-  rotulo: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#666666',
-    marginTop: 12,
-  },
-  texto: {
-    fontSize: 16,
-    color: '#333333',
-    marginTop: 4,
-    flexShrink: 1,
-    lineHeight: 22,
-  },
-});

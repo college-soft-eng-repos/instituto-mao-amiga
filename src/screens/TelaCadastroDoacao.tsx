@@ -11,10 +11,11 @@ import {
   Platform,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../App';
 import { pontosMock } from './TelaListaPontos';
-import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
+import ScreenContainer from '../components/ScreenContainer';
+import ScreenHeader from '../components/ScreenHeader';
+import CustomButton from '../components/CustomButton';
 import { 
   salvarDoacao, 
   listarDoacoes, 
@@ -27,7 +28,6 @@ import {
 type Props = NativeStackScreenProps<RootStackParamList, 'CadastroDoacao'>;
 
 export default function TelaCadastroDoacao({ route, navigation }: Props) {
-  const { conteudoStyle } = useConteudoResponsivo();
   const [tipoItem, setTipoItem] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [pontoDestinoId, setPontoDestinoId] = useState('');
@@ -37,12 +37,10 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
   
   const inputQuantidadeRef = useRef<TextInput>(null);
   
-  // Captura o ID da doação se veio pela navegação de detalhe
   const doacaoId = route.params?.doacaoId;
   const [isEdicao, setIsEdicao] = useState(false);
   const [criadoEmOriginal, setCriadoEmOriginal] = useState<string | null>(null);
 
-  // Inicialização: Se for edição, busca os dados. Se for novo, tenta carregar o rascunho.
   useEffect(() => {
     async function inicializarTela() {
       try {
@@ -55,14 +53,12 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
             setQuantidade(String(encontrada.quantidade || ''));
             setCriadoEmOriginal(encontrada.criadoEm);
             
-            // Encontra o ID do ponto pelo nome salvo
             const pontoEncontrado = pontosMock.find((p) => p.nome === encontrada.pontoDestino);
             if (pontoEncontrado) {
               setPontoDestinoId(pontoEncontrado.id);
             }
           }
         } else {
-          // Apenas carrega rascunho se for criação nova
           const rascunho = await carregarRascunho();
           if (rascunho) {
             setTipoItem(rascunho.tipoItem || '');
@@ -79,7 +75,6 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
     inicializarTela();
   }, [doacaoId]);
 
-  // Salva rascunho automaticamente apenas se NÃO estiver no modo edição
   useEffect(() => {
     if (carregando || isEdicao) return;
 
@@ -118,7 +113,6 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
 
     try {
       if (isEdicao && doacaoId) {
-        // Atualiza a doação existente mantendo o ID e a data de criação original
         await atualizarDoacao({
           id: doacaoId,
           tipoItem: tipoItem.trim(),
@@ -130,7 +124,6 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
         Keyboard.dismiss();
         navigation.goBack();
       } else {
-        // Salva nova doação
         await salvarDoacao({
           tipoItem: tipoItem.trim(),
           quantidade: quantidadeNumerica,
@@ -156,7 +149,7 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+    <ScreenContainer>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -164,19 +157,18 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
       >
         <ScrollView
           style={styles.flex}
-          contentContainerStyle={[styles.conteudo, conteudoStyle]}
+          contentContainerStyle={styles.conteudo}
+          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Título dinâmico conforme critério de aceite */}
-          <Text style={styles.titulo}>
-            {isEdicao ? 'Editar doação' : 'Cadastrar doação'}
-          </Text>
+          {/* Título dinâmico usando ScreenHeader */}
+          <ScreenHeader title={isEdicao ? 'Editar doação' : 'Cadastrar doação'} />
 
           <Text style={styles.rotulo}>Tipo do item</Text>
           <TextInput
             style={styles.input}
             placeholder="Ex.: arroz, roupa, leite"
-            placeholderTextColor="#888888"
+            placeholderTextColor="#8C98A4"
             value={tipoItem}
             onChangeText={setTipoItem}
             returnKeyType="next"
@@ -188,7 +180,7 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
             ref={inputQuantidadeRef}
             style={styles.input}
             placeholder="Ex.: 10"
-            placeholderTextColor="#888888"
+            placeholderTextColor="#8C98A4"
             value={quantidade}
             onChangeText={setQuantidade}
             keyboardType="number-pad"
@@ -220,70 +212,65 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
           {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
           {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
 
-          <TouchableOpacity style={styles.botao} onPress={validarESalvar}>
-            <Text style={styles.botaoTexto}>
-              {isEdicao ? 'Salvar alterações' : 'Registrar doação'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.containerBotoes}>
+            <CustomButton
+              title={isEdicao ? 'Salvar alterações' : 'Registrar doação'}
+              onPress={validarESalvar}
+              variant="primary"
+              icon={isEdicao ? 'check' : 'plus-circle'}
+            />
 
-          <TouchableOpacity
-            style={styles.botaoSecundario}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.botaoSecundarioTexto}>Cancelar</Text>
-          </TouchableOpacity>
+            <CustomButton
+              title="Cancelar"
+              onPress={() => navigation.goBack()}
+              variant="outline"
+            />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   flex: {
     flex: 1,
   },
   conteudo: {
-    paddingTop: 20,
+    paddingTop: 16,
     paddingBottom: 40,
     paddingHorizontal: 16,
   },
-  titulo: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1B3A5C',
-    marginBottom: 20,
-  },
   rotulo: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666666',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#8C98A4',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 6,
     marginTop: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 16,
-    color: '#333333',
+    fontSize: 15,
+    color: '#212529',
     backgroundColor: '#FFFFFF',
-    minHeight: 44,
+    minHeight: 46,
   },
   pontoOpcao: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,
-    minHeight: 44,
+    minHeight: 46,
     justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
   },
   pontoSelecionado: {
     borderColor: '#1B3A5C',
@@ -291,7 +278,7 @@ const styles = StyleSheet.create({
   },
   pontoNome: {
     fontSize: 14,
-    color: '#333333',
+    color: '#4A5568',
     flexShrink: 1,
   },
   pontoNomeSelecionado: {
@@ -308,31 +295,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 12,
   },
-  botao: {
-    backgroundColor: '#1B3A5C',
-    padding: 12,
-    borderRadius: 8,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  botaoTexto: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  botaoSecundario: {
-    padding: 12,
-    borderRadius: 8,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  botaoSecundarioTexto: {
-    color: '#666666',
-    fontWeight: '600',
-    fontSize: 16,
+  containerBotoes: {
+    marginTop: 24,
+    gap: 8,
   },
 });

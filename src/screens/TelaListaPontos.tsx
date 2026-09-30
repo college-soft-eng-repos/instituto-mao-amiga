@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  TouchableOpacity,
   FlatList,
-  TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
-import ListItemCard from '../components/ListItemCard'; // <-- Importado
+import ScreenContainer from '../components/ScreenContainer';
+import ScreenHeader from '../components/ScreenHeader';
+import ListItemCard from '../components/ListItemCard';
+import SearchInput from '../components/SearchInput';
+import CustomButton from '../components/CustomButton';
+import EmptyState from '../components/EmptyState';
 
 export type Ponto = {
   id: string;
@@ -92,125 +92,85 @@ type Props = {
 
 export default function TelaListaPontos({ navigation }: Props) {
   const [busca, setBusca] = useState('');
-  const { conteudoStyle } = useConteudoResponsivo();
   const pontosFiltrados = useMemo(() => {
     return pontosMock.filter((ponto) =>
-      ponto.nome.toLowerCase().includes(busca.toLowerCase())
+      ponto.nome.toLowerCase().includes(busca.toLowerCase().trim())
     );
   }, [busca]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+    <ScreenContainer withPadding={false}>
       <FlatList
         style={styles.lista}
         data={pontosFiltrados}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listaConteudo, conteudoStyle]}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listaConteudo}
         ListHeaderComponent={
           <View style={styles.cabecalho}>
-            <Text style={styles.titulo}>Buscar Pontos</Text>
-            <TextInput
-              style={styles.inputBusca}
-              placeholder="Buscar pontos..."
-              placeholderTextColor="#7c7c8a"
+            <ScreenHeader title="Buscar Pontos" />
+            
+            <SearchInput
               value={busca}
               onChangeText={setBusca}
-              autoCorrect={false}
+              placeholder="Buscar pontos..."
             />
             
-            <TouchableOpacity
-              style={styles.botaoCadastro}
+            <CustomButton
+              title="+ Cadastrar doação"
               onPress={() => navigation.navigate('CadastroDoacao')}
-            >
-              <Text style={styles.botaoCadastroTexto}>+ Cadastrar doação</Text>
-            </TouchableOpacity>
+              variant="primary"
+            />
 
-            <TouchableOpacity
-              style={styles.botaoHistorico}
+            <CustomButton
+              title="Ver histórico de doações"
               onPress={() => navigation.navigate('HistoricoDoacoes')}
-            >
-              <Text style={styles.botaoHistoricoTexto}>Ver histórico de doações</Text>
-            </TouchableOpacity>
+              variant="secondary"
+            />
 
-            <Text style={styles.titulo}>Todos os Pontos</Text>
+            <ScreenHeader title="Todos os Pontos" size="medium" />
           </View>
         }
         renderItem={({ item }) => (
-          <ListItemCard
-            titulo={item.nome}
-            subtitulo={item.endereco}
-            detalheRodape={item.diasHorarios}
-            onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
-          />
+          <View style={styles.itemWrapper}>
+            <ListItemCard
+              titulo={item.nome}
+              subtitulo={item.endereco}
+              detalheRodape={item.diasHorarios}
+              onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
+            />
+          </View>
         )}
+        ListEmptyComponent={
+          <View style={styles.emptyWrapper}>
+            <EmptyState
+              icon="search"
+              title={`Nenhum ponto encontrado para "${busca}".`}
+              subtitle="Tente pesquisar por outro nome de ponto de recolha."
+            />
+          </View>
+        }
       />
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA', // Fundo padronizado com o histórico
-  },
   lista: {
     flex: 1,
   },
   listaConteudo: {
-    paddingTop: 8,
+    paddingTop: 16,
     paddingBottom: 24,
-    paddingHorizontal: 16,
   },
   cabecalho: {
     marginBottom: 4,
-  },
-  titulo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1B3A5C',
-    marginBottom: 12,
-    flexShrink: 1,
-  },
-  inputBusca: {
-    minHeight: 46,
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 10,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginBottom: 12,
-    color: '#212529',
-    backgroundColor: '#FFFFFF',
-    fontSize: 15,
   },
-  botaoCadastro: {
-    backgroundColor: '#1B3A5C',
-    padding: 12,
-    borderRadius: 10,
-    minHeight: 46,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
+  itemWrapper: {
+    paddingHorizontal: 16,
   },
-  botaoCadastroTexto: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  botaoHistorico: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#1B3A5C',
-    borderWidth: 1,
-    padding: 12,
-    borderRadius: 10,
-    minHeight: 46,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  botaoHistoricoTexto: {
-    color: '#1B3A5C',
-    fontWeight: '600',
-    fontSize: 16,
+  emptyWrapper: {
+    paddingHorizontal: 16,
   },
 });

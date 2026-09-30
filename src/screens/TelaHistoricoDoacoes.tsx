@@ -1,20 +1,19 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
-  TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { listarDoacoes } from '../services/doacoesStorage';
-import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
+import ScreenContainer from '../components/ScreenContainer';
+import ScreenHeader from '../components/ScreenHeader';
 import ResumoDoacoesCard from '../components/ResumoDoacoesCard';
-import ListItemCard from '../components/ListItemCard'; // <-- Importado
+import ListItemCard from '../components/ListItemCard';
+import SearchInput from '../components/SearchInput';
+import EmptyState from '../components/EmptyState';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HistoricoDoacoes'>;
 
@@ -27,7 +26,6 @@ type Doacao = {
 };
 
 export default function TelaHistoricoDoacoes({ navigation }: Props) {
-  const { conteudoStyle } = useConteudoResponsivo();
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);
   const [busca, setBusca] = useState('');
   const [carregando, setCarregando] = useState(true);
@@ -86,14 +84,15 @@ export default function TelaHistoricoDoacoes({ navigation }: Props) {
   }, [doacoes, busca]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+    <ScreenContainer withPadding={false}>
       <FlatList
         data={doacoesFiltradas}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listaConteudo, conteudoStyle]}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listaConteudo}
         ListHeaderComponent={
           <View style={styles.headerContainer}>
-            <Text style={styles.titulo}>Minhas Doações</Text>
+            <ScreenHeader title="Minhas Doações" />
 
             {resumoDoacoes && (
               <ResumoDoacoesCard
@@ -103,13 +102,10 @@ export default function TelaHistoricoDoacoes({ navigation }: Props) {
               />
             )}
 
-            <TextInput
-              style={styles.inputBusca}
-              placeholder="Buscar por tipo de item..."
-              placeholderTextColor="#8C98A4"
+            <SearchInput
               value={busca}
               onChangeText={setBusca}
-              autoCorrect={false}
+              placeholder="Buscar por tipo de item..."
             />
           </View>
         }
@@ -120,95 +116,60 @@ export default function TelaHistoricoDoacoes({ navigation }: Props) {
           });
 
           return (
-            <ListItemCard
-              titulo={item.tipoItem}
-              subtitulo={`Destino: ${item.pontoDestino}`}
-              badge={`${item.quantidade} un.`}
-              detalheRodape={`Registrado em: ${dataFormatada}`}
-              onPress={() => navigation.navigate('DetalheDoacao', { doacaoId: item.id })}
-            />
+            <View style={styles.itemWrapper}>
+              <ListItemCard
+                titulo={item.tipoItem}
+                subtitulo={`Destino: ${item.pontoDestino}`}
+                badge={`${item.quantidade} un.`}
+                detalheRodape={`Registrado em: ${dataFormatada}`}
+                onPress={() => navigation.navigate('DetalheDoacao', { doacaoId: item.id })}
+              />
+            </View>
           );
         }}
         ListEmptyComponent={
           !carregando ? (
-            <View style={styles.vazioContainer}>
-              {doacoes.length === 0 ? (
-                <>
-                  <Text style={styles.vazioTexto}>Nenhuma doação registrada ainda.</Text>
-                  <TouchableOpacity
-                    style={styles.botaoCadastrarVazio}
-                    onPress={() => navigation.navigate('CadastroDoacao')}
-                  >
-                    <Text style={styles.botaoCadastrarVazioTexto}>Cadastrar primeira doação</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <Text style={styles.vazioTexto}>
-                  Nenhuma doação encontrada para "{busca}".
-                </Text>
-              )}
+            <View style={styles.emptyWrapper}>
+              <EmptyState
+                icon={doacoes.length === 0 ? 'package' : 'search'}
+                title={
+                  doacoes.length === 0
+                    ? 'Nenhuma doação registrada ainda.'
+                    : `Nenhuma doação encontrada para "${busca}".`
+                }
+                subtitle={
+                  doacoes.length === 0
+                    ? 'Comece registrando a sua primeira doação para o Instituto Mão Amiga.'
+                    : 'Tente buscar por outro termo ou limpe o campo de pesquisa.'
+                }
+                actionTitle={doacoes.length === 0 ? 'Cadastrar primeira doação' : undefined}
+                onActionPress={
+                  doacoes.length === 0
+                    ? () => navigation.navigate('CadastroDoacao')
+                    : undefined
+                }
+              />
             </View>
           ) : null
         }
       />
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
   headerContainer: {
     paddingTop: 16,
     paddingBottom: 4,
-  },
-  titulo: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1B3A5C',
-    marginBottom: 14,
-  },
-  inputBusca: {
-    minHeight: 46,
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 10,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginBottom: 16,
-    color: '#212529',
-    backgroundColor: '#FFFFFF',
-    fontSize: 15,
   },
   listaConteudo: {
     paddingBottom: 24,
   },
-  vazioContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 40,
-  },
-  vazioTexto: {
-    fontSize: 15,
-    color: '#64748B',
-    marginBottom: 16,
-    textAlign: 'center',
+  itemWrapper: {
     paddingHorizontal: 16,
   },
-  botaoCadastrarVazio: {
-    backgroundColor: '#1B3A5C',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 10,
-    minHeight: 46,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  botaoCadastrarVazioTexto: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 15,
+  emptyWrapper: {
+    paddingHorizontal: 16,
   },
 });
