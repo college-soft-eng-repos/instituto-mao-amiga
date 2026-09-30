@@ -50,6 +50,20 @@ export async function excluirDoacao(idParaExcluir) {
   }
 }
 
+// Atualiza uma doação existente
+export async function atualizarDoacao(doacaoAtualizada) {
+  try {
+    const doacoesAtuais = await listarDoacoes();
+    const doacoesAtualizadas = doacoesAtuais.map((item) =>
+      String(item.id) === String(doacaoAtualizada.id) ? doacaoAtualizada : item,
+    );
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(doacoesAtualizadas));
+    return doacoesAtualizadas;
+  } catch (error) {
+    console.error('Erro ao atualizar doação:', error);
+  }
+}
+
 // GERENCIAMENTO DE RASCUNHOS
 export async function salvarRascunho(rascunho) {
   try {

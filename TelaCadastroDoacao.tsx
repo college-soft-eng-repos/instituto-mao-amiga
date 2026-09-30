@@ -15,48 +15,79 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from './App';
 import { pontosMock } from './TelaListaPontos';
 import { useConteudoResponsivo } from './useConteudoResponsivo';
-import { salvarDoacao, carregarRascunho, salvarRascunho, limparRascunho } from './storage/doacoesStorage';
+import { 
+  salvarDoacao, 
+  listarDoacoes, 
+  atualizarDoacao, 
+  carregarRascunho, 
+  salvarRascunho, 
+  limparRascunho 
+} from './storage/doacoesStorage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CadastroDoacao'>;
 
-export default function TelaCadastroDoacao({ navigation }: Props) {
+export default function TelaCadastroDoacao({ route, navigation }: Props) {
   const { conteudoStyle } = useConteudoResponsivo();
   const [tipoItem, setTipoItem] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [pontoDestinoId, setPontoDestinoId] = useState('');
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
-  const [carregando, setCarregando] = useState(true); // Evita salvar antes de carregar
+  const [carregando, setCarregando] = useState(true);
+  
   const inputQuantidadeRef = useRef<TextInput>(null);
+  
+  // Captura o ID da doação se veio pela navegação de detalhe
+  const doacaoId = route.params?.doacaoId;
+  const [isEdicao, setIsEdicao] = useState(false);
+  const [criadoEmOriginal, setCriadoEmOriginal] = useState<string | null>(null);
 
-  // Carrega o rascunho salvo ao abrir a tela
-useEffect(() => {
-    async function inicializarRascunho() {
+  // Inicialização: Se for edição, busca os dados. Se for novo, tenta carregar o rascunho.
+  useEffect(() => {
+    async function inicializarTela() {
       try {
-        const rascunho = await carregarRascunho();
-        if (rascunho) {
-          setTipoItem(rascunho.tipoItem || '');
-          setQuantidade(rascunho.quantidade || '');
-          setPontoDestinoId(rascunho.pontoDestinoId || '');
+        if (doacaoId) {
+          setIsEdicao(true);
+          const lista = await listarDoacoes();
+          const encontrada = lista.find((item: any) => String(item.id) === String(doacaoId));
+          if (encontrada) {
+            setTipoItem(encontrada.tipoItem || '');
+            setQuantidade(String(encontrada.quantidade || ''));
+            setCriadoEmOriginal(encontrada.criadoEm);
+            
+            // Encontra o ID do ponto pelo nome salvo
+            const pontoEncontrado = pontosMock.find((p) => p.nome === encontrada.pontoDestino);
+            if (pontoEncontrado) {
+              setPontoDestinoId(pontoEncontrado.id);
+            }
+          }
+        } else {
+          // Apenas carrega rascunho se for criação nova
+          const rascunho = await carregarRascunho();
+          if (rascunho) {
+            setTipoItem(rascunho.tipoItem || '');
+            setQuantidade(rascunho.quantidade || '');
+            setPontoDestinoId(rascunho.pontoDestinoId || '');
+          }
         }
       } catch (error) {
-        console.error('Erro ao carregar o rascunho:', error);
+        console.error('Erro ao inicializar formulário:', error);
       } finally {
         setCarregando(false);
       }
     }
-    inicializarRascunho();
-  }, []);
+    inicializarTela();
+  }, [doacaoId]);
 
-  // Salva o rascunho automaticamente a cada alteração nos campos
+  // Salva rascunho automaticamente apenas se NÃO estiver no modo edição
   useEffect(() => {
-      if (carregando) return;
+    if (carregando || isEdicao) return;
 
-      async function persistirRascunho() {
-        await salvarRascunho({ tipoItem, quantidade, pontoDestinoId });
-      }
-      persistirRascunho();
-    }, [tipoItem, quantidade, pontoDestinoId, carregando]);
+    async function persistirRascunho() {
+      await salvarRascunho({ tipoItem, quantidade, pontoDestinoId });
+    }
+    persistirRascunho();
+  }, [tipoItem, quantidade, pontoDestinoId, carregando, isEdicao]);
 
   async function validarESalvar() {
     setSucesso('');
@@ -83,32 +114,44 @@ useEffect(() => {
     }
 
     const ponto = pontosMock.find((p) => p.id === pontoDestinoId);
+    const nomePontoDestino = ponto?.nome ?? 'Ponto não especificado';
 
     try {
-      await salvarDoacao({
-        tipoItem: tipoItem.trim(),
-        quantidade: quantidadeNumerica,
-        pontoDestino: ponto?.nome ?? 'Ponto não especificado',
-      });
+      if (isEdicao && doacaoId) {
+        // Atualiza a doação existente mantendo o ID e a data de criação original
+        await atualizarDoacao({
+          id: doacaoId,
+          tipoItem: tipoItem.trim(),
+          quantidade: quantidadeNumerica,
+          pontoDestino: nomePontoDestino,
+          criadoEm: criadoEmOriginal || new Date().toISOString(),
+        });
+        
+        Keyboard.dismiss();
+        navigation.goBack();
+      } else {
+        // Salva nova doação
+        await salvarDoacao({
+          tipoItem: tipoItem.trim(),
+          quantidade: quantidadeNumerica,
+          pontoDestino: nomePontoDestino,
+        });
 
-      setErro('');
-      setSucesso(
-        `Doação registrada: ${quantidadeNumerica}x ${tipoItem.trim()} → ${
-          ponto?.nome ?? 'ponto selecionado'
-        }.`
-      );
-      
-      // Limpa a tela
-      setTipoItem('');
-      setQuantidade('');
-      setPontoDestinoId('');
-      Keyboard.dismiss();
+        setErro('');
+        setSucesso(
+          `Doação registrada: ${quantidadeNumerica}x ${tipoItem.trim()} → ${nomePontoDestino}.`
+        );
+        
+        setTipoItem('');
+        setQuantidade('');
+        setPontoDestinoId('');
+        Keyboard.dismiss();
 
-      // Limpa o rascunho salvo após o sucesso
-      await limparRascunho();
+        await limparRascunho();
+      }
     } catch (error) {
-      console.error('Erro ao limpar o rascunho da doação:', error);
-      setErro('Erro ao salvar a doação.');
+      console.error('Erro ao salvar/atualizar a doação:', error);
+      setErro('Erro ao processar a doação.');
     }
   }
 
@@ -124,7 +167,10 @@ useEffect(() => {
           contentContainerStyle={[styles.conteudo, conteudoStyle]}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.titulo}>Cadastrar doação</Text>
+          {/* Título dinâmico conforme critério de aceite */}
+          <Text style={styles.titulo}>
+            {isEdicao ? 'Editar doação' : 'Cadastrar doação'}
+          </Text>
 
           <Text style={styles.rotulo}>Tipo do item</Text>
           <TextInput
@@ -175,14 +221,16 @@ useEffect(() => {
           {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
 
           <TouchableOpacity style={styles.botao} onPress={validarESalvar}>
-            <Text style={styles.botaoTexto}>Registrar doação</Text>
+            <Text style={styles.botaoTexto}>
+              {isEdicao ? 'Salvar alterações' : 'Registrar doação'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.botaoSecundario}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.botaoSecundarioTexto}>Voltar</Text>
+            <Text style={styles.botaoSecundarioTexto}>Cancelar</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -201,6 +249,7 @@ const styles = StyleSheet.create({
   conteudo: {
     paddingTop: 20,
     paddingBottom: 40,
+    paddingHorizontal: 16,
   },
   titulo: {
     fontSize: 22,

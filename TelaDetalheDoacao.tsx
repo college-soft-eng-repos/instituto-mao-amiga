@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './App';
 import { listarDoacoes, excluirDoacao } from './storage/doacoesStorage';
@@ -30,17 +32,28 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
   const [doacao, setDoacao] = useState<Doacao | null>(null);
   const [carregando, setCarregando] = useState(true);
 
-  useEffect(() => {
-    async function carregarDetalhes() {
-      const lista = await listarDoacoes();
-      const encontrada = lista.find((item: Doacao) => item.id === doacaoId);
-      setDoacao(encontrada || null);
-      setCarregando(false);
-    }
-    carregarDetalhes();
-  }, [doacaoId]);
+  // Substituímos o useEffect simples por useFocusEffect para recarregar ao voltar da edição
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
 
-  // Função auxiliar assíncrona isolada para realizar a exclusão
+      async function carregarDetalhes() {
+        setCarregando(true);
+        const lista = await listarDoacoes();
+        const encontrada = lista.find((item: Doacao) => item.id === doacaoId);
+        
+        if (isMounted) {
+          setDoacao(encontrada || null);
+          setCarregando(false);
+        }
+      }
+      carregarDetalhes();
+      return () => {
+        isMounted = false;
+      };
+    }, [doacaoId])
+  );
+
   async function executarExclusao() {
     try {
       await excluirDoacao(doacaoId);
@@ -51,19 +64,16 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
     }
   }
 
-  // Função chamada pelo botão que dispara o Alert nativo
   function confirmarExclusao() {
     if (Platform.OS === 'web') {
-      // Fallback limpo para a versão Web usando a API padrão do browser
-      const confirmado = window.confirm('Tem certeza de que deseja apagar esta doação registrada?');
+      const confirmado = window.confirm('Tem certeza de que deseja apagar esta doação registada?');
       if (confirmado) {
         executarExclusao();
       }
     } else {
-      // Comportamento nativo para iOS e Android
       Alert.alert(
         'Excluir doação',
-        'Tem certeza de que deseja apagar esta doação registrada?',
+        'Tem certeza de que deseja apagar esta doação registada?',
         [
           { text: 'Cancelar', style: 'cancel' },
           {
@@ -100,23 +110,72 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <View style={[styles.conteudo, conteudoStyle]}>
+        
+        {/* Bloco Principal / Card de Detalhes */}
         <View style={styles.card}>
-          <Text style={styles.label}>Tipo do Item</Text>
-          <Text style={styles.valorDestaque}>{doacao.tipoItem}</Text>
+          
+          {/* Cabeçalho do Card com Destaque */}
+          <View style={styles.cabecalhoCard}>
+            <View style={styles.iconeContainer}>
+              <Feather name="package" size={24} color="#1B3A5C" />
+            </View>
+            <View style={styles.flex1}>
+              <Text style={styles.label}>Tipo do Item</Text>
+              <Text style={styles.valorDestaque}>{doacao.tipoItem}</Text>
+            </View>
+          </View>
 
-          <Text style={styles.label}>Quantidade</Text>
-          <Text style={styles.valor}>{doacao.quantidade} unidades</Text>
+          <View style={styles.divisor} />
 
-          <Text style={styles.label}>Ponto de Destino</Text>
-          <Text style={styles.valor}>{doacao.pontoDestino}</Text>
+          {/* Linha: Quantidade */}
+          <View style={styles.linhaDetalhe}>
+            <Feather name="layers" size={18} color="#6C757D" style={styles.iconeLinha} />
+            <View style={styles.flex1}>
+              <Text style={styles.label}>Quantidade</Text>
+              <Text style={styles.valor}>{doacao.quantidade} unidades</Text>
+            </View>
+          </View>
 
-          <Text style={styles.label}>Data e Hora do Registro</Text>
-          <Text style={styles.valor}>{dataFormatada}</Text>
+          <View style={styles.divisor} />
+
+          {/* Linha: Ponto de Destino */}
+          <View style={styles.linhaDetalhe}>
+            <Feather name="map-pin" size={18} color="#6C757D" style={styles.iconeLinha} />
+            <View style={styles.flex1}>
+              <Text style={styles.label}>Ponto de Destino</Text>
+              <Text style={styles.valor}>{doacao.pontoDestino}</Text>
+            </View>
+          </View>
+
+          <View style={styles.divisor} />
+
+          {/* Linha: Data e Hora */}
+          <View style={styles.linhaDetalhe}>
+            <Feather name="clock" size={18} color="#6C757D" style={styles.iconeLinha} />
+            <View style={styles.flex1}>
+              <Text style={styles.label}>Data e Hora do Registo</Text>
+              <Text style={styles.valorData}>{dataFormatada}</Text>
+            </View>
+          </View>
+
         </View>
 
-        <TouchableOpacity style={styles.botaoExcluir} onPress={confirmarExclusao}>
-          <Text style={styles.botaoExcluirTexto}>Excluir doação</Text>
-        </TouchableOpacity>
+        {/* Rodapé com Ações */}
+        <View style={styles.containerBotoes}>
+          <TouchableOpacity
+            style={styles.botaoEditar}
+            onPress={() => navigation.navigate('CadastroDoacao', { doacaoId: doacao.id })}
+          >
+            <Feather name="edit-3" size={18} color="#FFFFFF" style={styles.iconeBotao} />
+            <Text style={styles.botaoEditarTexto}>Editar doação</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.botaoExcluirOutline} onPress={confirmarExclusao}>
+            <Feather name="trash-2" size={18} color="#DC3545" style={styles.iconeBotao} />
+            <Text style={styles.botaoExcluirTextoOutline}>Excluir doação</Text>
+          </TouchableOpacity>
+        </View>
+
       </View>
     </SafeAreaView>
   );
@@ -125,7 +184,7 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F9FA',
   },
   centralizado: {
     flex: 1,
@@ -136,49 +195,118 @@ const styles = StyleSheet.create({
   conteudo: {
     flex: 1,
     padding: 16,
-    justifyContent: 'space-between',
+    justifyContent: 'space-between', // Distribui perfeitamente topo e rodapé se houver espaço
+  },
+  flex1: {
+    flex: 1,
   },
   card: {
-    backgroundColor: '#F9F9F9',
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#EAEAEA',
     padding: 20,
-    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: { ios: 0.04, web: 0.04 } as any,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cabecalhoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  iconeContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: '#E8EEF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  linhaDetalhe: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+  },
+  iconeLinha: {
+    marginTop: 2,
+  },
+  divisor: {
+    height: 1,
+    backgroundColor: '#F1F3F5',
+    marginVertical: 14,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666666',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#8C98A4',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   valor: {
-    fontSize: 16,
-    color: '#333333',
-    marginBottom: 4,
+    fontSize: 15,
+    color: '#212529',
+    fontWeight: '500',
+    lineHeight: 20,
   },
   valorDestaque: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1B3A5C',
-    marginBottom: 4,
+  },
+  valorData: {
+    fontSize: 14,
+    color: '#6C757D',
+    lineHeight: 18,
   },
   erroTexto: {
     fontSize: 16,
     color: '#C62828',
     textAlign: 'center',
   },
-  botaoExcluir: {
-    backgroundColor: '#C62828',
-    borderRadius: 8,
-    minHeight: 44,
+  containerBotoes: {
+    gap: 10,
+    marginTop: 20,
+  },
+  botaoEditar: {
+    backgroundColor: '#1B3A5C',
+    borderRadius: 10,
+    minHeight: 48,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 12,
-    marginBottom: 16,
+    gap: 8,
+    shadowColor: '#1B3A5C',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  botaoExcluirTexto: {
+  botaoEditarTexto: {
     color: '#FFFFFF',
     fontWeight: '600',
     fontSize: 16,
+  },
+  botaoExcluirOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#DC3545',
+    borderRadius: 10,
+    minHeight: 48,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  botaoExcluirTextoOutline: {
+    color: '#DC3545',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  iconeBotao: {
+    marginRight: 2,
   },
 });
