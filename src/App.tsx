@@ -21,32 +21,19 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Lista">
-          <Stack.Screen
-            name="Lista"
-            component={TelaListaPontos}
-            options={{ title: 'Instituto Mão Amiga' }}
-          />
-          <Stack.Screen
-            name="Detalhe"
-            component={TelaDetalhePonto}
-            options={{ title: 'Detalhe do ponto' }}
-          />
-          <Stack.Screen
-            name="CadastroDoacao"
-            component={TelaCadastroDoacao}
-            options={{ title: 'Cadastrar doação' }}
-          />
-          <Stack.Screen
-            name="HistoricoDoacoes"
-            component={TelaHistoricoDoacoes}
-            options={{ title: 'Histórico de doações' }}
-          />
-          <Stack.Screen
-            name="DetalheDoacao"
-            component={TelaDetalheDoacao}
-            options={{ title: 'Detalhe da doação' }}
-          />
+        <Stack.Navigator 
+          initialRouteName="Lista"
+          screenOptions={{
+            headerShown: false,
+            presentation: 'transparentModal',
+            animation: 'fade',
+          }}
+        >
+          <Stack.Screen name="Lista" component={TelaListaPontos} />
+          <Stack.Screen name="HistoricoDoacoes" component={TelaHistoricoDoacoes} options={{ headerShown: true, title: 'Histórico de doações' }} />
+          <Stack.Screen name="Detalhe" component={TelaDetalhePonto} />
+          <Stack.Screen name="CadastroDoacao" component={TelaCadastroDoacao} />
+          <Stack.Screen name="DetalheDoacao" component={TelaDetalheDoacao} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

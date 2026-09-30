@@ -18,7 +18,7 @@ export default function ScreenContainer({
   const { conteudoStyle } = useConteudoResponsivo();
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right', 'top']}>
       <View style={[styles.inner, withPadding && styles.defaultPadding, conteudoStyle, style]}>
         {children}
       </View>

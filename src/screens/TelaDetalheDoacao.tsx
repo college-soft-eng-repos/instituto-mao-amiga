@@ -6,15 +6,15 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { listarDoacoes, excluirDoacao } from '../services/doacoesStorage';
-import { useConteudoResponsivo } from '../hooks/useConteudoResponsivo';
 import CustomButton from '../components/CustomButton';
-import ScreenContainer from '../components/ScreenContainer';
+import ModalHeader from '../components/ModalHeader';
 import InfoRow from '../components/InfoRow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetalheDoacao'>;
@@ -29,7 +29,6 @@ type Doacao = {
 
 export default function TelaDetalheDoacao({ route, navigation }: Props) {
   const { doacaoId } = route.params;
-  const { conteudoStyle } = useConteudoResponsivo();
   const [doacao, setDoacao] = useState<Doacao | null>(null);
   const [carregando, setCarregando] = useState(true);
 
@@ -86,114 +85,114 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
     }
   }
 
-  if (carregando) {
-    return (
-      <View style={styles.centralizado}>
-        <ActivityIndicator size="large" color="#1B3A5C" />
-      </View>
-    );
-  }
-
-  if (!doacao) {
-    return (
-      <View style={[styles.centralizado, conteudoStyle]}>
-        <Text style={styles.erroTexto}>Doação não encontrada ou já excluída.</Text>
-      </View>
-    );
-  }
-
-  const dataFormatada = new Date(doacao.criadoEm).toLocaleString('pt-BR', {
-    dateStyle: 'long',
-    timeStyle: 'medium',
-  });
-
   return (
-    <ScreenContainer>
-      <View style={styles.conteudoInterno}>
-        
-        {/* Bloco Principal / Card de Detalhes limpo com InfoRow */}
-        <View style={styles.card}>
-          
-          <View style={styles.cabecalhoCard}>
-            <View style={styles.iconeContainer}>
-              <Feather name="package" size={24} color="#1B3A5C" />
+    /* TouchableOpacity transparente para fechar o modal ao clicar fora do card */
+    <TouchableOpacity 
+      style={styles.modalOverlay} 
+      activeOpacity={1} 
+      onPress={() => navigation.goBack()}
+    >
+      {/* Container principal do modal (activeOpacity={1} para não fechar ao clicar dentro do card) */}
+      <TouchableOpacity 
+        style={styles.modalContent} 
+        activeOpacity={1} 
+        onPress={(e) => e.stopPropagation()}
+      >
+        <ModalHeader title="Detalhes da Doação" onClose={() => navigation.goBack()} />
+
+        {carregando ? (
+          <View style={styles.centralizado}>
+            <ActivityIndicator size="large" color="#1B3A5C" />
+          </View>
+        ) : !doacao ? (
+          <View style={styles.centralizado}>
+            <Text style={styles.erroTexto}>Doação não encontrada ou já excluída.</Text>
+          </View>
+        ) : (
+          <View style={styles.conteudoInterno}>
+            <View style={styles.card}>
+              <View style={styles.cabecalhoCard}>
+                <View style={styles.iconeContainer}>
+                  <Feather name="package" size={24} color="#1B3A5C" />
+                </View>
+                <View style={styles.flex1}>
+                  <Text style={styles.label}>Tipo do Item</Text>
+                  <Text style={styles.valorDestaque}>{doacao.tipoItem}</Text>
+                </View>
+              </View>
+
+              <View style={styles.divisor} />
+
+              <InfoRow icon="layers" label="Quantidade" value={`${doacao.quantidade} unidades`} />
+              <InfoRow icon="map-pin" label="Ponto de Destino" value={doacao.pontoDestino} />
+              <InfoRow 
+                icon="clock" 
+                label="Data e Hora do Registo" 
+                value={new Date(doacao.criadoEm).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'medium' })} 
+                isLast={true} 
+              />
             </View>
-            <View style={styles.flex1}>
-              <Text style={styles.label}>Tipo do Item</Text>
-              <Text style={styles.valorDestaque}>{doacao.tipoItem}</Text>
+
+            <View style={styles.containerBotoes}>
+              <CustomButton
+                title="Editar doação"
+                onPress={() => navigation.navigate('CadastroDoacao', { doacaoId: doacao.id })}
+                variant="primary"
+                icon="edit-3"
+              />
+
+              <CustomButton
+                title="Excluir doação"
+                onPress={confirmarExclusao}
+                variant="danger-outline"
+                icon="trash-2"
+              />
             </View>
           </View>
-
-          <View style={styles.divisor} />
-
-          <InfoRow
-            icon="layers"
-            label="Quantidade"
-            value={`${doacao.quantidade} unidades`}
-          />
-
-          <InfoRow
-            icon="map-pin"
-            label="Ponto de Destino"
-            value={doacao.pontoDestino}
-          />
-
-          <InfoRow
-            icon="clock"
-            label="Data e Hora do Registo"
-            value={dataFormatada}
-            isLast={true}
-          />
-        </View>
-
-        {/* Rodapé com botões padronizados */}
-        <View style={styles.containerBotoes}>
-          <CustomButton
-            title="Editar doação"
-            onPress={() => navigation.navigate('CadastroDoacao', { doacaoId: doacao.id })}
-            variant="primary"
-            icon="edit-3"
-          />
-
-          <CustomButton
-            title="Excluir doação"
-            onPress={confirmarExclusao}
-            variant="danger-outline"
-            icon="trash-2"
-          />
-        </View>
-
-      </View>
-    </ScreenContainer>
+        )}
+      </TouchableOpacity>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  centralizado: {
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fundo escuro translúcido (efeito blur/overlay)
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 480,
     backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  centralizado: {
+    paddingVertical: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   conteudoInterno: {
-    flex: 1,
     justifyContent: 'space-between',
-    paddingBottom: 16,
   },
   flex1: {
     flex: 1,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
+    padding: 16,
+    marginBottom: 16,
   },
   cabecalhoCard: {
     flexDirection: 'row',
@@ -223,8 +222,8 @@ const styles = StyleSheet.create({
   },
   divisor: {
     height: 1,
-    backgroundColor: '#F1F3F5',
-    marginVertical: 14,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 12,
   },
   erroTexto: {
     fontSize: 16,
@@ -233,6 +232,5 @@ const styles = StyleSheet.create({
   },
   containerBotoes: {
     gap: 8,
-    marginTop: 20,
   },
 });

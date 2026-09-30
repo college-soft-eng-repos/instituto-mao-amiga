@@ -13,8 +13,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { pontosMock } from './TelaListaPontos';
-import ScreenContainer from '../components/ScreenContainer';
-import ScreenHeader from '../components/ScreenHeader';
+import ModalHeader from '../components/ModalHeader';
 import CustomButton from '../components/CustomButton';
 import { 
   salvarDoacao, 
@@ -149,100 +148,134 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
   }
 
   return (
-    <ScreenContainer>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    <TouchableOpacity 
+      style={styles.modalOverlay} 
+      activeOpacity={1} 
+      onPress={() => navigation.goBack()}
+    >
+      <TouchableOpacity 
+        style={styles.modalContent} 
+        activeOpacity={1} 
+        onPress={(e) => e.stopPropagation()}
       >
-        <ScrollView
+        {/* Cabeçalho fixo no topo do modal */}
+        <ModalHeader 
+          title={isEdicao ? 'Editar doação' : 'Cadastrar doação'} 
+          onClose={() => navigation.goBack()} 
+        />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flex}
-          contentContainerStyle={styles.conteudo}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
         >
-          {/* Título dinâmico usando ScreenHeader */}
-          <ScreenHeader title={isEdicao ? 'Editar doação' : 'Cadastrar doação'} />
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.conteudo}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.rotulo}>Tipo do item</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex.: arroz, roupa, leite"
+              placeholderTextColor="#8C98A4"
+              value={tipoItem}
+              onChangeText={setTipoItem}
+              returnKeyType="next"
+              onSubmitEditing={() => inputQuantidadeRef.current?.focus()}
+            />
 
-          <Text style={styles.rotulo}>Tipo do item</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex.: arroz, roupa, leite"
-            placeholderTextColor="#8C98A4"
-            value={tipoItem}
-            onChangeText={setTipoItem}
-            returnKeyType="next"
-            onSubmitEditing={() => inputQuantidadeRef.current?.focus()}
-          />
+            <Text style={styles.rotulo}>Quantidade</Text>
+            <TextInput
+              ref={inputQuantidadeRef}
+              style={styles.input}
+              placeholder="Ex.: 10"
+              placeholderTextColor="#8C98A4"
+              value={quantidade}
+              onChangeText={setQuantidade}
+              keyboardType="number-pad"
+              returnKeyType="done"
+              onSubmitEditing={validarESalvar}
+            />
 
-          <Text style={styles.rotulo}>Quantidade</Text>
-          <TextInput
-            ref={inputQuantidadeRef}
-            style={styles.input}
-            placeholder="Ex.: 10"
-            placeholderTextColor="#8C98A4"
-            value={quantidade}
-            onChangeText={setQuantidade}
-            keyboardType="number-pad"
-            returnKeyType="done"
-            onSubmitEditing={validarESalvar}
-          />
-
-          <Text style={styles.rotulo}>Ponto de destino</Text>
-          {pontosMock.map((ponto) => (
-            <TouchableOpacity
-              key={ponto.id}
-              style={[
-                styles.pontoOpcao,
-                pontoDestinoId === ponto.id && styles.pontoSelecionado,
-              ]}
-              onPress={() => setPontoDestinoId(ponto.id)}
+            <Text style={styles.rotulo}>Ponto de destino</Text>
+            
+            {/* Lista compacta de pontos com rolagem interna */}
+            <ScrollView 
+              style={styles.trayContainer} 
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={true}
             >
-              <Text
-                style={[
-                  styles.pontoNome,
-                  pontoDestinoId === ponto.id && styles.pontoNomeSelecionado,
-                ]}
-              >
-                {ponto.nome}
-              </Text>
-            </TouchableOpacity>
-          ))}
+              {pontosMock.map((ponto) => {
+                const selecionado = pontoDestinoId === ponto.id;
+                return (
+                  <TouchableOpacity
+                    key={ponto.id}
+                    style={[styles.pontoChip, selecionado && styles.pontoChipSelecionado]}
+                    onPress={() => setPontoDestinoId(ponto.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.pontoTexto, selecionado && styles.pontoTextoSelecionado]}>
+                      {ponto.nome}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
 
-          {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
-          {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
+            {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
+            {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
 
-          <View style={styles.containerBotoes}>
-            <CustomButton
-              title={isEdicao ? 'Salvar alterações' : 'Registrar doação'}
-              onPress={validarESalvar}
-              variant="primary"
-              icon={isEdicao ? 'check' : 'plus-circle'}
-            />
+            <View style={styles.containerBotoes}>
+              <CustomButton
+                title={isEdicao ? 'Salvar alterações' : 'Registrar doação'}
+                onPress={validarESalvar}
+                variant="primary"
+                icon={isEdicao ? 'check' : 'plus-circle'}
+              />
 
-            <CustomButton
-              title="Cancelar"
-              onPress={() => navigation.goBack()}
-              variant="outline"
-            />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </ScreenContainer>
+              <CustomButton
+                title="Cancelar"
+                onPress={() => navigation.goBack()}
+                variant="outline"
+              />
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableOpacity>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '85%', // <-- Altura máxima dinâmica (só cresce até 85% se precisar)
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  flex: {
+    // Removido o flex: 1 daqui para não forçar altura total
   },
   conteudo: {
-    paddingTop: 16,
-    paddingBottom: 40,
-    paddingHorizontal: 16,
+    paddingBottom: 8, // Padding reduzido para ficar bem ajustado
   },
   rotulo: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#8C98A4',
     textTransform: 'uppercase',
@@ -258,45 +291,46 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 15,
     color: '#212529',
-    backgroundColor: '#FFFFFF',
-    minHeight: 46,
+    backgroundColor: '#F8F9FA',
+    minHeight: 44,
   },
-  pontoOpcao: {
+  trayContainer: {
+    maxHeight: 120, // Altura compacta da listagem de pontos
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 8,
-    minHeight: 46,
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F9FA',
+    padding: 6,
   },
-  pontoSelecionado: {
-    borderColor: '#1B3A5C',
+  pontoChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  pontoChipSelecionado: {
     backgroundColor: '#E8EEF4',
   },
-  pontoNome: {
-    fontSize: 14,
+  pontoTexto: {
+    fontSize: 13,
     color: '#4A5568',
-    flexShrink: 1,
   },
-  pontoNomeSelecionado: {
+  pontoTextoSelecionado: {
     fontWeight: '600',
     color: '#1B3A5C',
   },
   erro: {
     color: '#C62828',
-    fontSize: 14,
-    marginTop: 12,
+    fontSize: 13,
+    marginTop: 8,
   },
   sucesso: {
     color: '#2E7D32',
-    fontSize: 14,
-    marginTop: 12,
+    fontSize: 13,
+    marginTop: 8,
   },
   containerBotoes: {
-    marginTop: 24,
+    marginTop: 20,
     gap: 8,
   },
 });
