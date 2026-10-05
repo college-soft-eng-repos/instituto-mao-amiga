@@ -20,7 +20,7 @@ export function useConteudoResponsivo(): {
   let paddingHorizontal = 16;
 
   if (isDesktop) {
-    // Desktop: aproveita a largura (antes o teto 560px deixava uma fileirinha no meio)
+    // Desktop: aproveita a largura
     contentWidth = Math.min(width * 0.88, 1100);
     maxWidth = 1100;
     paddingHorizontal = 32;
