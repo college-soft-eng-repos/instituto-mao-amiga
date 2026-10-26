@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @OpenAPIDefinition
 public class InstitutoMaoAmigaApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(InstitutoMaoAmigaApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(InstitutoMaoAmigaApplication.class, args);
+  }
 }
