@@ -1,4 +1,4 @@
-const API_URLS = ['http://10.40.28.92:8080', 'http://localhost:8080'];
+const API_URLS = ['http://localhost:8080', 'http://10.40.28.92:8080'];
 
 export async function apiFetch<T>(
   path: string,
