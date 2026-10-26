@@ -9,11 +9,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
-import { pontosMock } from './TelaListaPontos';
+import type { Ponto } from '../types/ponto';
+import { listarPontos } from '../services/pontosService';
 import ModalHeader from '../components/ModalHeader';
 import CustomButton from '../components/CustomButton';
 import { 
@@ -37,6 +39,8 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
   const [carregando, setCarregando] = useState(true);
+  const [pontos, setPontos] = useState<Ponto[]>([]);
+  const [erroPontos, setErroPontos] = useState('');
   
   const inputQuantidadeRef = useRef<TextInput>(null);
   
@@ -47,6 +51,9 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
   useEffect(() => {
     async function inicializarTela() {
       try {
+        const pagina = await listarPontos();
+        setPontos(pagina.content);
+
         if (doacaoId) {
           setIsEdicao(true);
           const lista = await listarDoacoes();
@@ -56,7 +63,7 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
             setQuantidade(String(encontrada.quantidade || ''));
             setCriadoEmOriginal(encontrada.criadoEm);
             
-            const pontoEncontrado = pontosMock.find((p) => p.nome === encontrada.pontoDestino);
+            const pontoEncontrado = pagina.content.find((p) => p.nome === encontrada.pontoDestino);
             if (pontoEncontrado) {
               setPontoDestinoId(pontoEncontrado.id);
             }
@@ -71,6 +78,7 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
         }
       } catch (error) {
         console.error('Erro ao inicializar formulário:', error);
+        setErroPontos('Não foi possível carregar os pontos. Verifique se a API está ligada.');
       } finally {
         setCarregando(false);
       }
@@ -111,8 +119,13 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
       return;
     }
 
-    const ponto = pontosMock.find((p) => p.id === pontoDestinoId);
-    const nomePontoDestino = ponto?.nome ?? 'Ponto não especificado';
+    const ponto = pontos.find((p) => p.id === pontoDestinoId);
+    if (!ponto) {
+      setErro('Selecione um ponto de destino válido.');
+      return;
+    }
+
+    const nomePontoDestino = ponto.nome;
 
     try {
       if (isEdicao && doacaoId) {
@@ -200,28 +213,36 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
             />
 
             <Text style={styles.rotulo}>Ponto de destino</Text>
-            
-            <ScrollView 
-              style={styles.trayContainer} 
-              nestedScrollEnabled={true}
-              showsVerticalScrollIndicator={true}
-            >
-              {pontosMock.map((ponto) => {
-                const selecionado = pontoDestinoId === ponto.id;
-                return (
-                  <TouchableOpacity
-                    key={ponto.id}
-                    style={[styles.pontoChip, selecionado && styles.pontoChipSelecionado]}
-                    onPress={() => setPontoDestinoId(ponto.id)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.pontoTexto, selecionado && styles.pontoTextoSelecionado]}>
-                      {ponto.nome}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+
+            {carregando ? (
+              <View style={styles.loadingPontos}>
+                <ActivityIndicator size="small" color="#2563EB" />
+              </View>
+            ) : erroPontos !== '' ? (
+              <Text style={styles.erro}>{erroPontos}</Text>
+            ) : (
+              <ScrollView
+                style={styles.trayContainer}
+                nestedScrollEnabled={true}
+                showsVerticalScrollIndicator={true}
+              >
+                {pontos.map((ponto) => {
+                  const selecionado = pontoDestinoId === ponto.id;
+                  return (
+                    <TouchableOpacity
+                      key={ponto.id}
+                      style={[styles.pontoChip, selecionado && styles.pontoChipSelecionado]}
+                      onPress={() => setPontoDestinoId(ponto.id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.pontoTexto, selecionado && styles.pontoTextoSelecionado]}>
+                        {ponto.nome}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
 
             {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
             {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
@@ -301,6 +322,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#F8FAFC',
     padding: 6,
+  },
+  loadingPontos: {
+    minHeight: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pontoChip: {
     paddingHorizontal: 12,
