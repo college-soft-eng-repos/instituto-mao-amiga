@@ -9,26 +9,19 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList, TabParamList } from '../App';
+import type { RootStackParamList, TabParamList } from '../types/navigation';
 import { listarDoacoes } from '../services/doacoesStorage';
 import ScreenContainer from '../components/ScreenContainer';
 import ResumoDoacoesCard from '../components/ResumoDoacoesCard';
 import ListItemCard from '../components/ListItemCard';
 import SearchInput from '../components/SearchInput';
 import EmptyState from '../components/EmptyState';
+import type { Doacao } from '../types/doacao';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Historico'>,
   NativeStackScreenProps<RootStackParamList>
 >;
-
-type Doacao = {
-  id: string;
-  tipoItem: string;
-  quantidade: number;
-  pontoDestino: string;
-  criadoEm: string;
-};
 
 export default function TelaHistoricoDoacoes({ navigation }: Props) {
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);
@@ -167,7 +160,7 @@ export default function TelaHistoricoDoacoes({ navigation }: Props) {
                 actionTitle={doacoes.length === 0 ? 'Cadastrar primeira doação' : undefined}
                 onActionPress={
                   doacoes.length === 0
-                    ? () => (navigation.navigate as any)('MainTabs', { screen: 'Cadastrar' })
+                    ? () => navigation.navigate('CadastrarModal')
                     : undefined
                 }
               />
