@@ -2,6 +2,19 @@
 
 Aplicativo mobile desenvolvido em **React Native** com **Expo** e **TypeScript** para gestão de pontos de coleta e doações.
 
+## API
+
+A API do Instituto Mão Amiga está no diretório `api/`. Ela é um projeto Spring Boot separado dentro deste repositório e será responsável pelos pontos de coleta.
+
+Para executar a API:
+
+```bash
+cd api
+./mvnw spring-boot:run
+```
+
+O backend usa Spring Web, Spring Data JPA e H2. Os endpoints de pontos serão adicionados no próximo passo da Issue #24.
+
 ---
 
 ## Como Executar o Projeto
