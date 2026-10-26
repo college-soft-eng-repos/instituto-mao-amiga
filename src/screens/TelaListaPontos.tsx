@@ -8,21 +8,14 @@ import {
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { TabParamList, RootStackParamList } from '../App';
+import type { TabParamList, RootStackParamList } from '../types/navigation';
 import ScreenContainer from '../components/ScreenContainer';
 import ListItemCard from '../components/ListItemCard';
 import SearchInput from '../components/SearchInput';
 import EmptyState from '../components/EmptyState';
+import type { Ponto } from '../types/ponto';
 
-export type Ponto = {
-  id: string;
-  nome: string;
-  endereco: string;
-  diasHorarios: string;
-  recebeDistribui: string;
-};
-
-export const pontosMock: Ponto[] = [
+export const pontosMock: Array<Omit<Ponto, 'latitude' | 'longitude'>> = [
   {
     id: '1',
     nome: 'Ponto Centro — Igreja São José',

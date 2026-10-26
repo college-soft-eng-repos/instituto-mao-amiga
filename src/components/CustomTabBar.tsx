@@ -1,24 +1,26 @@
 import React from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../types/navigation';
 
 // Dimensões e cálculos adaptativos
 const larguraTela = Dimensions.get('window').width;
 const larguraBarra = larguraTela - 48;
 const paddingDinamico = larguraBarra * 0.12;
 
-interface CustomTabBarProps {
-  state: any;
-  descriptors: any;
-  navigation: any;
-}
+type CustomTabBarProps = BottomTabBarProps;
 
 export default function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
+  const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   return (
     <View style={styles.barraContainerOutside}>
       {/* Barra de Pílula Flutuante */}
       <View style={[styles.barraPill, { width: larguraBarra, paddingHorizontal: paddingDinamico }]}>
-        {state.routes.map((route: any, index: number) => {
+        {state.routes.map((route, index) => {
           const isFocused = state.index === index;
 
           const onPress = () => {
@@ -61,8 +63,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: CustomT
         style={styles.botaoAcaoCentralAbsoluto}
         activeOpacity={0.85}
         onPress={() => {
-          // @ts-ignore
-          navigation.navigate('CadastrarModal');
+          rootNavigation.navigate('CadastrarModal');
         }}
       >
         <Feather name="plus" size={26} color="#FFFFFF" />

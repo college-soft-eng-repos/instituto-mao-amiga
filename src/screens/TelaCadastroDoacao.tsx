@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../App';
+import type { RootStackParamList } from '../types/navigation';
 import { pontosMock } from './TelaListaPontos';
 import ModalHeader from '../components/ModalHeader';
 import CustomButton from '../components/CustomButton';
@@ -50,7 +50,7 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
         if (doacaoId) {
           setIsEdicao(true);
           const lista = await listarDoacoes();
-          const encontrada = lista.find((item: any) => String(item.id) === String(doacaoId));
+          const encontrada = lista.find((item) => String(item.id) === String(doacaoId));
           if (encontrada) {
             setTipoItem(encontrada.tipoItem || '');
             setQuantidade(String(encontrada.quantidade || ''));

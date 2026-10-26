@@ -1,17 +1,15 @@
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { pontosMock, type Ponto } from './TelaListaPontos';
+import type { RootStackParamList } from '../types/navigation';
+import type { Ponto } from '../types/ponto';
+import { pontosMock } from './TelaListaPontos';
 import ModalHeader from '../components/ModalHeader';
 import InfoRow from '../components/InfoRow';
 
-type RootStackParamList = {
-  Lista: undefined;
-  Detalhe: { pontoId: string };
-};
-
 type Props = NativeStackScreenProps<RootStackParamList, 'Detalhe'>;
+type PontoMock = Omit<Ponto, 'latitude' | 'longitude'>;
 
-function DetalhePonto({ ponto, navigation }: { ponto: Ponto; navigation: any }) {
+function DetalhePonto({ ponto, navigation }: { ponto: PontoMock; navigation: Props['navigation'] }) {
   return (
     <TouchableOpacity 
       style={styles.modalOverlay} 

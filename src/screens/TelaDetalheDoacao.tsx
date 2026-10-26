@@ -11,21 +11,14 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../App';
+import type { RootStackParamList } from '../types/navigation';
 import { listarDoacoes, excluirDoacao } from '../services/doacoesStorage';
 import CustomButton from '../components/CustomButton';
 import ModalHeader from '../components/ModalHeader';
 import InfoRow from '../components/InfoRow';
+import type { Doacao } from '../types/doacao';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetalheDoacao'>;
-
-type Doacao = {
-  id: string;
-  tipoItem: string;
-  quantidade: number;
-  pontoDestino: string;
-  criadoEm: string;
-};
 
 export default function TelaDetalheDoacao({ route, navigation }: Props) {
   const { doacaoId } = route.params;
