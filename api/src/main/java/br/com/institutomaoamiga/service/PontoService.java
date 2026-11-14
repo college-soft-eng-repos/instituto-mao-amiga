@@ -6,6 +6,8 @@ import br.com.institutomaoamiga.entity.Ponto;
 import br.com.institutomaoamiga.repository.PontoRepository;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,12 @@ public class PontoService {
 
     public List<PontoResponseDTO> listar() {
         return pontoRepository.findAll().stream().map(PontoResponseDTO::fromEntity).toList();
+    }
+
+    public Page<PontoResponseDTO> buscarPagina(String filtro, Pageable pageable) {
+        String filtroNormalizado = filtro == null ? "" : filtro.trim();
+        return pontoRepository.buscarPorNomeOuBairro(filtroNormalizado, pageable)
+                .map(PontoResponseDTO::fromEntity);
     }
 
     public PontoResponseDTO buscarPorId(UUID id) {

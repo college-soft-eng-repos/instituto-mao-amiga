@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   listaConteudo: {
     paddingTop: 28,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   cabecalho: {
     paddingHorizontal: 20,
