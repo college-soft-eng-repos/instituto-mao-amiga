@@ -1,16 +1,41 @@
-import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import type { Ponto } from '../types/ponto';
-import { buscarPontoPorId } from '../services/pontosService';
 import { ApiError } from '../services/api';
+import { buscarPontoPorId, excluirPonto } from '../services/pontosService';
 import ModalHeader from '../components/ModalHeader';
 import InfoRow from '../components/InfoRow';
+import CustomButton from '../components/CustomButton';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Detalhe'>;
 
-function DetalhePonto({ ponto, navigation }: { ponto: Ponto; navigation: Props['navigation'] }) {
+function DetalhePonto({
+  ponto,
+  navigation,
+  excluindo,
+  aoEditar,
+  aoExcluir,
+  confirmacaoWebVisivel,
+  erroExclusaoWeb,
+  aoCancelarExclusao,
+  aoConfirmarExclusaoWeb,
+  aoFecharErroWeb,
+}: {
+  ponto: Ponto;
+  navigation: Props['navigation'];
+  excluindo: boolean;
+  aoEditar: () => void;
+  aoExcluir: () => void;
+  confirmacaoWebVisivel: boolean;
+  erroExclusaoWeb: string;
+  aoCancelarExclusao: () => void;
+  aoConfirmarExclusaoWeb: () => void;
+  aoFecharErroWeb: () => void;
+}) {
   return (
     <TouchableOpacity 
       style={styles.modalOverlay} 
@@ -31,7 +56,35 @@ function DetalhePonto({ ponto, navigation }: { ponto: Ponto; navigation: Props['
           <InfoRow icon="clock" label="Horário" value={ponto.horario} />
           <InfoRow icon="info" label="Tipo" value={ponto.tipo} isLast={true} />
         </View>
+
+        <View style={styles.acoes}>
+          <View style={styles.botaoWrapper}>
+            <CustomButton title="Editar" icon="edit-2" variant="outline" onPress={aoEditar} />
+          </View>
+          <View style={styles.botaoWrapper}>
+            <CustomButton title="Excluir" icon="trash-2" variant="danger-outline" onPress={aoExcluir} loading={excluindo} />
+          </View>
+        </View>
       </TouchableOpacity>
+      {confirmacaoWebVisivel && (
+        <ConfirmationDialog
+          title="Excluir ponto?"
+          message="Tem certeza de que deseja excluir este ponto?"
+          cancelLabel="Cancelar"
+          confirmLabel={excluindo ? 'Excluindo...' : 'Excluir'}
+          onCancel={aoCancelarExclusao}
+          onConfirm={aoConfirmarExclusaoWeb}
+        />
+      )}
+      {erroExclusaoWeb !== '' && (
+        <ConfirmationDialog
+          title="Não foi possível excluir o ponto"
+          message={erroExclusaoWeb}
+          confirmLabel="OK"
+          confirmVariant="primary"
+          onConfirm={aoFecharErroWeb}
+        />
+      )}
     </TouchableOpacity>
   );
 }
@@ -41,9 +94,14 @@ export default function TelaDetalhePonto({ route, navigation }: Props) {
   const [ponto, setPonto] = useState<Ponto | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const [excluindo, setExcluindo] = useState(false);
+  const [confirmacaoWebVisivel, setConfirmacaoWebVisivel] = useState(false);
+  const [erroExclusaoWeb, setErroExclusaoWeb] = useState('');
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let montado = true;
+    setCarregando(true);
+    setErro('');
 
     async function carregarPonto() {
       try {
@@ -73,7 +131,39 @@ export default function TelaDetalhePonto({ route, navigation }: Props) {
     return () => {
       montado = false;
     };
-  }, [pontoId]);
+  }, [pontoId]));
+
+  async function excluir() {
+    setExcluindo(true);
+    try {
+      await excluirPonto(pontoId);
+      navigation.goBack();
+    } catch (error) {
+      const mensagem = error instanceof ApiError
+        ? `A API respondeu com erro HTTP ${error.status}. O ponto não foi excluído.`
+        : 'Não foi possível conectar à API. O ponto não foi excluído.';
+      if (Platform.OS === 'web') {
+        setErroExclusaoWeb(mensagem);
+      } else {
+        Alert.alert('Não foi possível excluir o ponto', mensagem);
+      }
+    } finally {
+      setExcluindo(false);
+    }
+  }
+
+  function confirmarExclusao() {
+    if (Platform.OS === 'web') {
+      setErroExclusaoWeb('');
+      setConfirmacaoWebVisivel(true);
+      return;
+    }
+
+    Alert.alert('Excluir ponto', 'Tem certeza de que deseja excluir este ponto?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Excluir', style: 'destructive', onPress: () => { void excluir(); } },
+    ]);
+  }
 
   if (carregando || erro !== '' || !ponto) {
     return (
@@ -92,7 +182,23 @@ export default function TelaDetalhePonto({ route, navigation }: Props) {
     );
   }
 
-  return <DetalhePonto ponto={ponto} navigation={navigation} />;
+  return (
+    <DetalhePonto
+      ponto={ponto}
+      navigation={navigation}
+      excluindo={excluindo}
+      aoEditar={() => navigation.navigate('FormularioPonto', { pontoId: ponto.id })}
+      aoExcluir={confirmarExclusao}
+      confirmacaoWebVisivel={confirmacaoWebVisivel}
+      erroExclusaoWeb={erroExclusaoWeb}
+      aoCancelarExclusao={() => setConfirmacaoWebVisivel(false)}
+      aoConfirmarExclusaoWeb={() => {
+        setConfirmacaoWebVisivel(false);
+        void excluir();
+      }}
+      aoFecharErroWeb={() => setErroExclusaoWeb('')}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
@@ -131,5 +237,13 @@ const styles = StyleSheet.create({
     color: '#B91C1C',
     textAlign: 'center',
     fontSize: 14,
+  },
+  acoes: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 14,
+  },
+  botaoWrapper: {
+    flex: 1,
   },
 });
