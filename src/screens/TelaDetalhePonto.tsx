@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import type { Ponto } from '../types/ponto';
 import { buscarPontoPorId } from '../services/pontosService';
+import { ApiError } from '../services/api';
 import ModalHeader from '../components/ModalHeader';
 import InfoRow from '../components/InfoRow';
 
@@ -26,8 +27,9 @@ function DetalhePonto({ ponto, navigation }: { ponto: Ponto; navigation: Props['
         <View style={styles.card}>
           <InfoRow icon="map-pin" label="Nome do Ponto" value={ponto.nome} />
           <InfoRow icon="navigation" label="Endereço" value={ponto.endereco} />
-          <InfoRow icon="clock" label="Dias e Horários" value={ponto.diasHorarios} />
-          <InfoRow icon="info" label="Recebe / Distribui" value={ponto.recebeDistribui} isLast={true} />
+          <InfoRow icon="map" label="Bairro" value={ponto.bairro} />
+          <InfoRow icon="clock" label="Horário" value={ponto.horario} />
+          <InfoRow icon="info" label="Tipo" value={ponto.tipo} isLast={true} />
         </View>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -52,11 +54,12 @@ export default function TelaDetalhePonto({ route, navigation }: Props) {
         }
       } catch (error) {
         if (montado) {
-          const mensagem = error instanceof Error ? error.message : '';
           setErro(
-            mensagem === 'API_ERROR_404'
-              ? 'Ponto não encontrado.'
-              : 'Não foi possível carregar o ponto. Verifique se a API está ligada.',
+            error instanceof ApiError && error.status === 404
+              ? 'ponto não encontrado'
+              : error instanceof ApiError
+                ? `A API respondeu com erro (${error.status}).`
+                : 'Não foi possível conectar à API. Verifique se ela está ligada.',
           );
         }
       } finally {
@@ -76,7 +79,7 @@ export default function TelaDetalhePonto({ route, navigation }: Props) {
     return (
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => navigation.goBack()}>
         <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-          <ModalHeader title={erro === 'Ponto não encontrado.' ? 'Aviso' : 'Detalhes do Ponto'} onClose={() => navigation.goBack()} />
+          <ModalHeader title={erro === 'ponto não encontrado' ? 'Aviso' : 'Detalhes do Ponto'} onClose={() => navigation.goBack()} />
           <View style={styles.centralizado}>
             {carregando ? (
               <ActivityIndicator size="large" color="#2563EB" />
