@@ -4,16 +4,66 @@ Aplicativo mobile desenvolvido em **React Native** com **Expo** e **TypeScript**
 
 ## API
 
-A API do Instituto Mão Amiga está no diretório `api/`. Ela é um projeto Spring Boot separado dentro deste repositório e será responsável pelos pontos de coleta.
+A API do Instituto Mão Amiga está no diretório `api/`. Ela é um projeto Spring Boot separado dentro deste repositório.
 
-Para executar a API:
+Requer Java 21. Para executar a API:
 
 ```bash
 cd api
 ./mvnw spring-boot:run
 ```
 
-O backend usa Spring Web, Spring Data JPA e H2. Os endpoints de pontos serão adicionados no próximo passo da Issue #24.
+O Swagger está disponível em `http://localhost:8080/swagger-ui/index.html`.
+
+### Pontos de coleta (N2-1)
+
+| Método | URL | Descrição |
+| --- | --- | --- |
+| GET | `http://localhost:8080/api/v1/pontos` | Lista todos os pontos |
+| GET | `http://localhost:8080/api/v1/pontos/{id}` | Busca por UUID; responde 404 quando não existe |
+| POST | `http://localhost:8080/api/v1/pontos` | Cadastra um ponto; responde 400 se houver campo obrigatório vazio |
+| PUT | `http://localhost:8080/api/v1/pontos/{id}` | Atualiza um ponto; responde 404 se não existir e 400 para dados inválidos |
+| DELETE | `http://localhost:8080/api/v1/pontos/{id}` | Exclui um ponto |
+
+Exemplo de corpo para POST e PUT:
+
+```json
+{
+  "nome": "Ponto Praça Cívica",
+  "endereco": "Praça Cívica, Goiânia - GO",
+  "bairro": "Setor Central",
+  "horario": "Seg a Sex, 8h às 17h",
+  "tipo": "coleta"
+}
+```
+
+Os pontos iniciais são gravados no H2 em arquivo e inseridos somente quando ainda não há um ponto com o mesmo nome.
+
+#### Prints CRUD Pontos:
+
+> GET /api/v1/pontos
+![200 OK](image.png)
+
+> GET /api/v1/pontos/{id}
+![200 OK](image-2.png)
+
+> GET /api/v1/pontos/{id} - 404
+![404 Not Found](image-1.png)
+
+> POST /api/v1/pontos/ - 201
+![201 OK](image-4.png)
+
+> POST /api/v1/pontos/ - 400
+![400 POST Bad Request](image-3.png)
+
+> PUT /api/v1/pontos/{id} - 200
+![200 PUT OK](image-5.png)
+
+> PUT /api/v1/pontos/{id} - 404
+![404 PUT Not Found](image-6.png)
+
+> DELETE /api/v1/pontos/{id}
+![204 OK](image-7.png)
 
 ---
 

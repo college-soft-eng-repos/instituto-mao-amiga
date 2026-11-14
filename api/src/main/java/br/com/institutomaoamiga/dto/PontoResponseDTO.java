@@ -1,23 +1,22 @@
 package br.com.institutomaoamiga.dto;
 
 import br.com.institutomaoamiga.entity.Ponto;
+import java.util.UUID;
 
 public record PontoResponseDTO(
-    Long id,
+    UUID id,
     String nome,
     String endereco,
-    String diasHorarios,
-    String recebeDistribui,
-    Double latitude,
-    Double longitude) {
+    String bairro,
+    String horario,
+    String tipo) {
   public static PontoResponseDTO fromEntity(Ponto ponto) {
     return new PontoResponseDTO(
         ponto.getId(),
         ponto.getNome(),
         ponto.getEndereco(),
-        ponto.getDiasHorarios(),
-        ponto.getRecebeDistribui(),
-        ponto.getLatitude(),
-        ponto.getLongitude());
+        ponto.getBairro(),
+        ponto.getHorario(),
+        ponto.getTipo());
   }
 }
