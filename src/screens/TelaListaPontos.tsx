@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,7 +15,17 @@ import ListItemCard from '../components/ListItemCard';
 import SearchInput from '../components/SearchInput';
 import EmptyState from '../components/EmptyState';
 import type { Ponto } from '../types/ponto';
-import { listarPontos } from '../services/pontosService';
+import { buscarPaginaPontos } from '../services/pontosService';
+import { ApiError } from '../services/api';
+
+const TAMANHO_PAGINA = 10;
+
+function mensagemErroApi(error: unknown) {
+  if (error instanceof ApiError) {
+    return `A API respondeu com erro HTTP ${error.status}. Tente novamente mais tarde.`;
+  }
+  return 'Não foi possível conectar à API. Confira se ela está ligada e se o celular está na mesma rede Wi-Fi do computador.';
+}
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Inicio'>,
@@ -25,51 +35,109 @@ type Props = CompositeScreenProps<
 export default function TelaListaPontos({ navigation }: Props) {
   const [pontos, setPontos] = useState<Ponto[]>([]);
   const [busca, setBusca] = useState('');
+  const [buscaAplicada, setBuscaAplicada] = useState('');
+  const [pagina, setPagina] = useState<{ number: number; totalPages: number; totalElements: number } | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [carregandoMais, setCarregandoMais] = useState(false);
   const [erro, setErro] = useState('');
+  const [erroMais, setErroMais] = useState('');
+  const requisicaoAtualRef = useRef(0);
+  const paginasSolicitadasRef = useRef<Set<number>>(new Set());
+  const carregandoMaisRef = useRef(false);
 
   useEffect(() => {
-    let montado = true;
+    const timeout = setTimeout(() => setBuscaAplicada(busca.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [busca]);
 
-    async function carregarPontos() {
+  useEffect(() => {
+    const requisicaoId = ++requisicaoAtualRef.current;
+    paginasSolicitadasRef.current = new Set([0]);
+    carregandoMaisRef.current = false;
+    setCarregandoMais(false);
+    setPontos([]);
+    setPagina(null);
+    setErro('');
+    setErroMais('');
+    setCarregando(true);
+
+    async function carregarPrimeiraPagina() {
       try {
-        const pagina = await listarPontos();
-        if (montado) {
-          setPontos(pagina.content);
-          setErro('');
+        const resultado = await buscarPaginaPontos(0, TAMANHO_PAGINA, buscaAplicada);
+        if (requisicaoId === requisicaoAtualRef.current) {
+          setPontos(resultado.content);
+          setPagina(resultado.page);
         }
       } catch (error) {
-        if (montado) {
-          console.error('Erro ao carregar pontos:', error);
-          setErro('Não foi possível carregar os pontos. Verifique se a API está ligada.');
+        if (requisicaoId === requisicaoAtualRef.current) {
+          setErro(mensagemErroApi(error));
         }
       } finally {
-        if (montado) {
+        if (requisicaoId === requisicaoAtualRef.current) {
           setCarregando(false);
         }
       }
     }
 
-    carregarPontos();
+    carregarPrimeiraPagina();
     return () => {
-      montado = false;
+      if (requisicaoId === requisicaoAtualRef.current) {
+        requisicaoAtualRef.current += 1;
+      }
     };
-  }, []);
+  }, [buscaAplicada]);
 
-  const pontosFiltrados = useMemo(() => {
-    return pontos.filter((ponto) =>
-      ponto.nome.toLowerCase().includes(busca.toLowerCase().trim())
-    );
-  }, [busca, pontos]);
+  const carregarMaisPontos = useCallback(async () => {
+    if (
+      carregando ||
+      carregandoMaisRef.current ||
+      !pagina ||
+      busca.trim() !== buscaAplicada ||
+      pagina.number >= pagina.totalPages - 1
+    ) {
+      return;
+    }
+
+    const proximaPagina = pagina.number + 1;
+    if (paginasSolicitadasRef.current.has(proximaPagina)) return;
+
+    const requisicaoId = requisicaoAtualRef.current;
+    paginasSolicitadasRef.current.add(proximaPagina);
+    carregandoMaisRef.current = true;
+    setCarregandoMais(true);
+    setErroMais('');
+
+    try {
+      const resultado = await buscarPaginaPontos(proximaPagina, TAMANHO_PAGINA, buscaAplicada);
+      if (requisicaoId === requisicaoAtualRef.current) {
+        setPontos((atuais) => {
+          const idsAtuais = new Set(atuais.map((ponto) => ponto.id));
+          return [...atuais, ...resultado.content.filter((ponto) => !idsAtuais.has(ponto.id))];
+        });
+        setPagina(resultado.page);
+      }
+    } catch (error) {
+      if (requisicaoId === requisicaoAtualRef.current) {
+        setErroMais(mensagemErroApi(error));
+      }
+    } finally {
+      if (requisicaoId === requisicaoAtualRef.current) {
+        carregandoMaisRef.current = false;
+        setCarregandoMais(false);
+      }
+    }
+  }, [busca, buscaAplicada, carregando, pagina]);
 
   return (
     <ScreenContainer withPadding={false}>
       <FlatList
         style={styles.lista}
-        data={pontosFiltrados}
+        data={pontos}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listaConteudo}
+        onEndReached={carregarMaisPontos}
+        onEndReachedThreshold={0.4}
         ListHeaderComponent={
           <View style={styles.cabecalho}>
             <View style={styles.tituloContainer}>
@@ -90,7 +158,7 @@ export default function TelaListaPontos({ navigation }: Props) {
             <View style={styles.secaoHeaderRow}>
               <Text style={styles.secaoTitulo}>Locais Disponíveis</Text>
               <View style={styles.contadorBadge}>
-                <Text style={styles.contadorTexto}>{pontosFiltrados.length} encontrados</Text>
+                <Text style={styles.contadorTexto}>{pagina?.totalElements ?? 0} encontrados</Text>
               </View>
             </View>
           </View>
@@ -100,7 +168,7 @@ export default function TelaListaPontos({ navigation }: Props) {
             <ListItemCard
               titulo={item.nome}
               subtitulo={item.endereco}
-              detalheRodape={item.diasHorarios}
+              detalheRodape={item.horario}
               onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
             />
           </View>
@@ -114,11 +182,20 @@ export default function TelaListaPontos({ navigation }: Props) {
             <View style={styles.emptyWrapper}>
               <EmptyState
                 icon={erro !== '' ? 'alert-circle' : 'search'}
-                title={erro !== '' ? 'Não foi possível carregar os pontos.' : `Nenhum ponto encontrado para "${busca}".`}
+                title={erro !== '' ? 'Não foi possível carregar os pontos.' : `Nenhum ponto encontrado para "${buscaAplicada}".`}
                 subtitle={erro !== '' ? erro : 'Tente pesquisar por outro termo ou limpe o campo.'}
               />
             </View>
           )
+        }
+        ListFooterComponent={
+          carregandoMais ? (
+            <View style={styles.loadingFooter}>
+              <ActivityIndicator size="small" color="#2563EB" />
+            </View>
+          ) : erroMais !== '' ? (
+            <Text style={styles.erroMais}>{erroMais}</Text>
+          ) : null
         }
       />
     </ScreenContainer>
@@ -190,5 +267,15 @@ const styles = StyleSheet.create({
   loadingWrapper: {
     paddingVertical: 48,
     alignItems: 'center',
+  },
+  loadingFooter: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  erroMais: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    color: '#B91C1C',
+    textAlign: 'center',
   },
 });

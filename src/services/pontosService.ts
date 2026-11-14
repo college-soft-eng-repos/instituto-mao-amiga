@@ -1,40 +1,39 @@
 import type { PageResponse } from '../types/api';
-import type { Ponto } from '../types/ponto';
-import { apiFetch } from './api';
+import type { Ponto, PontoRequest } from '../types/ponto';
+import { del, get, post, put } from './api';
 
-export function listarPontos(
+const TAMANHO_PAGINA = 10;
+
+export function listarPontos(): Promise<PageResponse<Ponto>> {
+  return buscarPaginaPontos(0, TAMANHO_PAGINA, '');
+}
+
+export function buscarPaginaPontos(
   page = 0,
-  size = 20,
+  size = TAMANHO_PAGINA,
   filtro = '',
 ): Promise<PageResponse<Ponto>> {
-  const pageSize = Math.min(Math.max(size, 1), 50);
   const params = new URLSearchParams({
-    filtro: filtro,
+    filtro: filtro.trim(),
     page: String(page),
-    size: String(pageSize),
-    sort: 'nome,asc',
+    size: String(size),
   });
 
-  // Alterado de /pontos para /pontos/filtro para corresponder ao Page do Spring Boot
-  return apiFetch<PageResponse<PontoApi>>(
-    `/pontos/filtro?${params.toString()}`,
-  ).then((pagina) => ({
-    ...pagina,
-    content: pagina.content.map(normalizarPonto),
-  }));
+  return get<PageResponse<Ponto>>(`/pontos/filtro?${params.toString()}`);
 }
 
 export function buscarPontoPorId(id: string): Promise<Ponto> {
-  return apiFetch<PontoApi>(`/pontos/${encodeURIComponent(id)}`).then(
-    normalizarPonto,
-  );
+  return get<Ponto>(`/pontos/${encodeURIComponent(id)}`);
 }
 
-type PontoApi = Omit<Ponto, 'id'> & { id: string | number };
+export function cadastrarPonto(dados: PontoRequest): Promise<Ponto> {
+  return post<Ponto>('/pontos', dados);
+}
 
-function normalizarPonto(ponto: PontoApi): Ponto {
-  return {
-    ...ponto,
-    id: String(ponto.id),
-  };
+export function editarPonto(id: string, dados: PontoRequest): Promise<Ponto> {
+  return put<Ponto>(`/pontos/${encodeURIComponent(id)}`, dados);
+}
+
+export function excluirPonto(id: string): Promise<void> {
+  return del<void>(`/pontos/${encodeURIComponent(id)}`);
 }

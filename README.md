@@ -15,6 +15,10 @@ cd api
 
 O Swagger está disponível em `http://localhost:8080/swagger-ui/index.html`.
 
+### Conexão do aplicativo com a API (N2-3)
+
+O endereço base da API fica centralizado em `src/services/api.ts`, na constante `API_BASE_URL`. Para abrir o app em um celular, substitua `10.40.28.92` pelo IPv4 atual do computador e deixe o celular e o computador na mesma rede Wi-Fi. Mantenha `:8080/api/v1` no final do endereço. Inicie a API com `./mvnw spring-boot:run` e o app com `npx expo start`; não use `localhost` no endereço do celular, pois ele apontaria para o próprio aparelho.
+
 ### Pontos de coleta (N2-1)
 
 | Método | URL                                        | Descrição                                                                 |
