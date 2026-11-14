@@ -2,8 +2,9 @@ export type Ponto = {
   id: string;
   nome: string;
   endereco: string;
-  diasHorarios: string;
-  recebeDistribui: string;
-  latitude: number;
-  longitude: number;
+  bairro: string;
+  horario: string;
+  tipo: 'coleta' | 'distribuição';
 };
+
+export type PontoRequest = Omit<Ponto, 'id'>;
