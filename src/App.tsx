@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import TelaListaPontos from './screens/TelaListaPontos';
 import TelaDetalhePonto from './screens/TelaDetalhePonto';
+import TelaFormularioPonto from './screens/TelaFormularioPonto';
 import TelaCadastroDoacao from './screens/TelaCadastroDoacao';
 import TelaHistoricoDoacoes from './screens/TelaHistoricoDoacoes';
 import TelaDetalheDoacao from './screens/TelaDetalheDoacao';
@@ -42,6 +43,7 @@ export default function App() {
           <Stack.Screen name="MainTabs" component={MainTabNavigator} />
           <Stack.Screen name="CadastrarModal" component={TelaCadastroDoacao} />
           <Stack.Screen name="Detalhe" component={TelaDetalhePonto} />
+          <Stack.Screen name="FormularioPonto" component={TelaFormularioPonto} />
           <Stack.Screen name="DetalheDoacao" component={TelaDetalheDoacao} />
         </Stack.Navigator>
       </NavigationContainer>

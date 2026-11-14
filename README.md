@@ -17,7 +17,11 @@ O Swagger está disponível em `http://localhost:8080/swagger-ui/index.html`.
 
 ### Conexão do aplicativo com a API (N2-3)
 
-O endereço base da API fica centralizado em `src/services/api.ts`, na constante `API_BASE_URL`. Para abrir o app em um celular, substitua `10.40.28.92` pelo IPv4 atual do computador e deixe o celular e o computador na mesma rede Wi-Fi. Mantenha `:8080/api/v1` no final do endereço. Inicie a API com `./mvnw spring-boot:run` e o app com `npx expo start`; não use `localhost` no endereço do celular, pois ele apontaria para o próprio aparelho.
+Os endereços da API ficam centralizados em `src/services/api.ts`, no array `API_URLS`. Para abrir o app em um celular, substitua `10.40.28.92` pelo IPv4 atual do computador e deixe o celular e o computador na mesma rede Wi-Fi. Mantenha `:8080/api/v1` no final do endereço. Inicie a API com `./mvnw spring-boot:run` e o app com `npx expo start`; não use `localhost` no endereço do celular, pois ele apontaria para o próprio aparelho.
+
+### CRUD de pontos no aplicativo (N2-4)
+
+Na tela inicial, use **Cadastrar ponto** para abrir o formulário. Toque em um ponto para ver os detalhes, editar os dados no mesmo formulário ou excluí-lo após confirmar. Cadastro e edição usam a API; quando a API recusa uma alteração ou fica indisponível, o app mostra um erro e mantém os valores preenchidos. A confirmação de exclusão usa um diálogo próprio na web e `Alert.alert` no Android/iOS.
 
 ### Pontos de coleta (N2-1)
 
