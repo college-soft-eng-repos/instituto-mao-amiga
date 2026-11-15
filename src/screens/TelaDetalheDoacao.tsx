@@ -1,101 +1,94 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  Platform,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../App';
-import { listarDoacoes, excluirDoacao } from '../services/doacoesStorage';
-import CustomButton from '../components/CustomButton';
-import ModalHeader from '../components/ModalHeader';
 import InfoRow from '../components/InfoRow';
+import CustomButton from '../components/CustomButton';
+import ConfirmationDialog from '../components/ConfirmationDialog';
+import ModalHeader from '../components/ModalHeader';
+import { ApiError } from '../services/api';
+import { buscarDoacaoPorId, excluirDoacao } from '../services/doacoesService';
+import type { RootStackParamList } from '../types/navigation';
+import type { Doacao } from '../types/doacao';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetalheDoacao'>;
-
-type Doacao = {
-  id: string;
-  tipoItem: string;
-  quantidade: number;
-  pontoDestino: string;
-  criadoEm: string;
-};
 
 export default function TelaDetalheDoacao({ route, navigation }: Props) {
   const { doacaoId } = route.params;
   const [doacao, setDoacao] = useState<Doacao | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erro, setErro] = useState('');
+  const [confirmacaoWebVisivel, setConfirmacaoWebVisivel] = useState(false);
+  const [erroExclusaoWeb, setErroExclusaoWeb] = useState('');
 
-  useFocusEffect(
-    useCallback(() => {
-      let isMounted = true;
+  useFocusEffect(useCallback(() => {
+    let montada = true;
+    setCarregando(true);
+    setErro('');
 
-      async function carregarDetalhes() {
-        setCarregando(true);
-        const lista = await listarDoacoes();
-        const encontrada = lista.find((item: Doacao) => item.id === doacaoId);
-        
-        if (isMounted) {
-          setDoacao(encontrada || null);
-          setCarregando(false);
+    async function carregarDoacao() {
+      try {
+        const resultado = await buscarDoacaoPorId(doacaoId);
+        if (montada) setDoacao(resultado);
+      } catch (error) {
+        if (montada) {
+          setErro(
+            error instanceof ApiError && error.status === 404
+              ? 'doação não encontrada'
+              : error instanceof ApiError
+                ? `A API respondeu com erro HTTP ${error.status}.`
+                : 'Não foi possível conectar à API. Confira se ela está ligada.',
+          );
         }
+      } finally {
+        if (montada) setCarregando(false);
       }
-      carregarDetalhes();
-      return () => {
-        isMounted = false;
-      };
-    }, [doacaoId])
-  );
+    }
 
-  async function executarExclusao() {
+    carregarDoacao();
+    return () => {
+      montada = false;
+    };
+  }, [doacaoId]));
+
+  async function confirmarExclusao() {
+    setErro('');
+    setExcluindo(true);
     try {
       await excluirDoacao(doacaoId);
       navigation.goBack();
     } catch (error) {
-      console.error('ERRO na exclusão:', error);
-      Alert.alert('Erro', 'Não foi possível excluir a doação.');
+      const mensagem = error instanceof ApiError
+        ? `A API respondeu com erro HTTP ${error.status}. A doação não foi excluída.`
+        : 'Não foi possível conectar à API. A doação não foi excluída.';
+      if (Platform.OS === 'web') {
+        setErroExclusaoWeb(mensagem);
+      } else {
+        Alert.alert('Não foi possível excluir a doação', mensagem);
+      }
+    } finally {
+      setExcluindo(false);
     }
   }
 
-  function confirmarExclusao() {
+  function solicitarExclusao() {
     if (Platform.OS === 'web') {
-      const confirmado = window.confirm('Tem certeza de que deseja apagar esta doação registrada?');
-      if (confirmado) {
-        executarExclusao();
-      }
-    } else {
-      Alert.alert(
-        'Excluir doação',
-        'Tem certeza de que deseja apagar esta doação registrada?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Excluir',
-            style: 'destructive',
-            onPress: () => executarExclusao(),
-          },
-        ]
-      );
+      setErroExclusaoWeb('');
+      setConfirmacaoWebVisivel(true);
+      return;
     }
+
+    Alert.alert('Excluir doação', 'Deseja realmente excluir esta doação?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Excluir', style: 'destructive', onPress: () => void confirmarExclusao() },
+    ]);
   }
 
   return (
-    <TouchableOpacity 
-      style={styles.modalOverlay} 
-      activeOpacity={1} 
-      onPress={() => navigation.goBack()}
-    >
-      <TouchableOpacity 
-        style={styles.modalContent} 
-        activeOpacity={1} 
-        onPress={(e) => e.stopPropagation()}
-      >
+    <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={(event) => event.stopPropagation()}>
         <ModalHeader title="Detalhes da Doação" onClose={() => navigation.goBack()} />
 
         {carregando ? (
@@ -104,10 +97,10 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
           </View>
         ) : !doacao ? (
           <View style={styles.centralizado}>
-            <Text style={styles.erroTexto}>Doação não encontrada ou já excluída.</Text>
+            <Text style={styles.erroTexto}>{erro || 'Doação não encontrada.'}</Text>
           </View>
         ) : (
-          <View style={styles.conteudoInterno}>
+          <>
             <View style={styles.card}>
               <View style={styles.cabecalhoCard}>
                 <View style={styles.iconeContainer}>
@@ -120,45 +113,62 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
               </View>
 
               <View style={styles.divisor} />
-
               <InfoRow icon="layers" label="Quantidade" value={`${doacao.quantidade} unidades`} />
-              <InfoRow icon="map-pin" label="Ponto de Destino" value={pontoDestinoLimpo(doacao.pontoDestino)} />
-              <InfoRow 
-                icon="clock" 
-                label="Data e Hora do Registro" 
-                value={new Date(doacao.criadoEm).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'medium' })} 
-                isLast={true} 
+              <InfoRow icon="map-pin" label="Ponto de Destino" value={doacao.pontoDestino} />
+              <InfoRow
+                icon="clock"
+                label="Data e Hora do Registro"
+                value={new Date(doacao.criadoEm).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'medium' })}
+                isLast
               />
             </View>
-
-            {/* Botões lado a lado modernos */}
-            <View style={styles.containerBotoes}>
-              <View style={styles.botaoWrapper}>
-                <CustomButton
-                  title="Excluir"
-                  onPress={confirmarExclusao}
-                  variant="danger-outline"
-                  icon="trash-2"
-                />
-              </View>
-              <View style={styles.botaoWrapper}>
+            {erro !== '' && <Text style={styles.erroTexto}>{erro}</Text>}
+            <View style={styles.acoes}>
+              <View style={styles.acao}>
                 <CustomButton
                   title="Editar"
-                  onPress={() => navigation.navigate('CadastrarModal', { doacaoId: doacao.id } )}
-                  variant="primary"
-                  icon="edit-3"
+                  icon="edit-2"
+                  variant="outline"
+                  onPress={() => navigation.navigate('CadastrarModal', { doacaoId })}
+                />
+              </View>
+              <View style={styles.acao}>
+                <CustomButton
+                  title="Excluir"
+                  icon="trash-2"
+                  variant="danger-outline"
+                  onPress={solicitarExclusao}
+                  loading={excluindo}
                 />
               </View>
             </View>
-          </View>
+          </>
         )}
       </TouchableOpacity>
+      {confirmacaoWebVisivel && (
+        <ConfirmationDialog
+          title="Excluir doação?"
+          message="Tem certeza de que deseja excluir esta doação? Essa ação não pode ser desfeita."
+          cancelLabel="Cancelar"
+          confirmLabel={excluindo ? 'Excluindo...' : 'Excluir'}
+          onCancel={() => setConfirmacaoWebVisivel(false)}
+          onConfirm={() => {
+            setConfirmacaoWebVisivel(false);
+            void confirmarExclusao();
+          }}
+        />
+      )}
+      {erroExclusaoWeb !== '' && (
+        <ConfirmationDialog
+          title="Não foi possível excluir a doação"
+          message={erroExclusaoWeb}
+          confirmLabel="OK"
+          confirmVariant="primary"
+          onConfirm={() => setErroExclusaoWeb('')}
+        />
+      )}
     </TouchableOpacity>
   );
-}
-
-function pontoDestinoLimpo(nome: string) {
-  return nome;
 }
 
 const styles = StyleSheet.create({
@@ -186,10 +196,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  conteudoInterno: {
-    justifyContent: 'space-between',
+  erroTexto: {
+    fontSize: 15,
+    color: '#DC2626',
+    textAlign: 'center',
+    fontWeight: '500',
   },
-  flex1: {
+  acoes: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  acao: {
     flex: 1,
   },
   card: {
@@ -198,7 +216,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     padding: 16,
-    marginBottom: 20,
   },
   cabecalhoCard: {
     flexDirection: 'row',
@@ -212,6 +229,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  flex1: {
+    flex: 1,
   },
   label: {
     fontSize: 11,
@@ -230,18 +250,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E2E8F0',
     marginVertical: 14,
-  },
-  erroTexto: {
-    fontSize: 15,
-    color: '#DC2626',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  containerBotoes: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  botaoWrapper: {
-    flex: 1,
   },
 });
