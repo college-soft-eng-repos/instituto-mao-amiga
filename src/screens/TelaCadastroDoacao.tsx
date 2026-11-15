@@ -17,7 +17,7 @@ import CustomButton from '../components/CustomButton';
 import ModalHeader from '../components/ModalHeader';
 import { ApiError } from '../services/api';
 import { listarTodosPontos } from '../services/pontosService';
-import { cadastrarDoacao } from '../services/doacoesService';
+import { buscarDoacaoPorId, cadastrarDoacao, editarDoacao } from '../services/doacoesService';
 import type { RootStackParamList } from '../types/navigation';
 import type { Ponto } from '../types/ponto';
 
@@ -33,7 +33,9 @@ function mensagemErro(error: unknown) {
   return 'Não foi possível conectar à API. Confira se ela está ligada. Seus dados continuam no formulário.';
 }
 
-export default function TelaCadastroDoacao({ navigation }: Props) {
+export default function TelaCadastroDoacao({ route, navigation }: Props) {
+  const doacaoId = route.params?.doacaoId;
+  const editando = Boolean(doacaoId);
   const [tipoItem, setTipoItem] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [pontoDestinoId, setPontoDestinoId] = useState('');
@@ -49,10 +51,26 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
 
     async function carregarPontos() {
       try {
-        const lista = await listarTodosPontos();
-        if (montado) setPontos(lista);
+        const [lista, doacao] = await Promise.all([
+          listarTodosPontos(),
+          doacaoId ? buscarDoacaoPorId(doacaoId) : Promise.resolve(null),
+        ]);
+        if (montado) {
+          setPontos(lista);
+          if (doacao) {
+            setTipoItem(doacao.tipoItem);
+            setQuantidade(String(doacao.quantidade));
+            setPontoDestinoId(lista.find((ponto) => ponto.nome === doacao.pontoDestino)?.id ?? '');
+          }
+        }
       } catch (error) {
-        if (montado) setErroPontos(mensagemErro(error));
+        if (montado) {
+          setErroPontos(
+            doacaoId
+              ? `Não foi possível carregar os dados para edição. ${mensagemErro(error)}`
+              : mensagemErro(error),
+          );
+        }
       } finally {
         if (montado) setCarregandoPontos(false);
       }
@@ -62,7 +80,7 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
     return () => {
       montado = false;
     };
-  }, []);
+  }, [doacaoId]);
 
   async function validarESalvar() {
     setErro('');
@@ -91,11 +109,16 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
 
     setSalvando(true);
     try {
-      await cadastrarDoacao({
+      const dados = {
         tipoItem: item,
         quantidade: quantidadeNumerica,
         pontoDestino: pontoSelecionado.nome,
-      });
+      };
+      if (doacaoId) {
+        await editarDoacao(doacaoId, dados);
+      } else {
+        await cadastrarDoacao(dados);
+      }
       Keyboard.dismiss();
       navigation.goBack();
     } catch (error) {
@@ -108,7 +131,7 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
   return (
     <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => navigation.goBack()}>
       <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={(event) => event.stopPropagation()}>
-        <ModalHeader title="Cadastrar doação" onClose={() => navigation.goBack()} />
+        <ModalHeader title={editando ? 'Editar doação' : 'Cadastrar doação'} onClose={() => navigation.goBack()} />
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView
@@ -187,10 +210,10 @@ export default function TelaCadastroDoacao({ navigation }: Props) {
               </View>
               <View style={styles.botaoWrapper}>
                 <CustomButton
-                  title="Registrar"
+                  title={editando ? 'Salvar alterações' : 'Registrar'}
                   onPress={validarESalvar}
                   variant="primary"
-                  icon="plus-circle"
+                  icon={editando ? 'check' : 'plus-circle'}
                   loading={salvando}
                 />
               </View>
