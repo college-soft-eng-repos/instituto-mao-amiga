@@ -47,6 +47,41 @@ Exemplo de corpo para POST e PUT:
 
 Os pontos iniciais são gravados no H2 em arquivo e inseridos somente quando ainda não há um ponto com o mesmo nome.
 
+### Doações pela API (N2-5)
+
+As doações são persistidas no mesmo H2. `criadoEm` é definido pelo serviço no cadastro e preservado na edição; ele não deve ser enviado no corpo da requisição.
+
+| Método | URL                                                                       | Descrição                                                                                      |
+| ------ | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| GET    | `http://localhost:8080/api/v1/doacoes/filtro?filtro=arroz&page=0&size=10` | Lista por tipo do item, sem diferenciar maiúsculas; ordena da mais nova para a mais antiga     |
+| GET    | `http://localhost:8080/api/v1/doacoes/{id}`                               | Busca por UUID; responde 404 quando não existe                                                 |
+| POST   | `http://localhost:8080/api/v1/doacoes`                                    | Cadastra; responde 400 para tipo/destino vazio ou quantidade ausente, zero ou negativa         |
+| PUT    | `http://localhost:8080/api/v1/doacoes/{id}`                               | Atualiza tipo, quantidade e destino; responde 400 para dados inválidos e 404 quando não existe |
+| DELETE | `http://localhost:8080/api/v1/doacoes/{id}`                               | Exclui por UUID; responde 204 quando concluído                                                 |
+
+#### Prints CRUD Doações:
+
+> GET /api/v1/doacoes/filtro
+> ![200 OK](image-10.png)
+
+> GET /api/v1/doacoes/{id}
+> ![200 OK](image-11.png)
+
+> POST /api/v1/doacoes/ - 201
+> ![201 OK](image-8.png)
+
+> POST /api/v1/doacoes/ - 400
+> ![400 POST Bad Request](image-9.png)
+
+> PUT /api/v1/doacoes/{id} - 200
+> ![200 PUT Ok](image-12.png)
+
+> PUT /api/v1/doacoes/{id} - 404
+> ![404 PUT Not Found](image-13.png)
+
+> DELETE /api/v1/doacoes/{id}
+> ![204 OK](image-14.png)
+
 ### Busca paginada de pontos (N2-2)
 
 O endpoint de filtro busca por nome ou bairro, ignorando maiúsculas e minúsculas. Sem filtro, retorna todos os pontos por página. O padrão é 10 itens, ordenados pelo nome; a URL pode sobrescrever a ordenação com `sort=bairro,asc`.
