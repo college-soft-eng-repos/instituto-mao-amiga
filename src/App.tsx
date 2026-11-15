@@ -10,6 +10,7 @@ import TelaFormularioPonto from './screens/TelaFormularioPonto';
 import TelaCadastroDoacao from './screens/TelaCadastroDoacao';
 import TelaHistoricoDoacoes from './screens/TelaHistoricoDoacoes';
 import TelaDetalheDoacao from './screens/TelaDetalheDoacao';
+import TelaMeusPontos from './screens/TelaMeusPontos';
 import CustomTabBar from './components/CustomTabBar';
 import type { RootStackParamList, TabParamList } from './types/navigation';
 
@@ -45,6 +46,7 @@ export default function App() {
           <Stack.Screen name="Detalhe" component={TelaDetalhePonto} />
           <Stack.Screen name="FormularioPonto" component={TelaFormularioPonto} />
           <Stack.Screen name="DetalheDoacao" component={TelaDetalheDoacao} />
+          <Stack.Screen name="MeusPontos" component={TelaMeusPontos} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

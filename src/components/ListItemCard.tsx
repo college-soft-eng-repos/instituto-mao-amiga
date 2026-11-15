@@ -1,6 +1,8 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 type ListItemCardProps = {
   titulo: string;
@@ -9,6 +11,9 @@ type ListItemCardProps = {
   detalheRodape?: string;
   iconeNome?: keyof typeof Feather.glyphMap;
   onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+  trailingAction?: ReactNode;
+  mostrarSeta?: boolean;
 };
 
 export default function ListItemCard({
@@ -18,36 +23,43 @@ export default function ListItemCard({
   detalheRodape,
   iconeNome = 'chevron-right',
   onPress,
+  style,
+  trailingAction,
+  mostrarSeta = true,
 }: ListItemCardProps) {
   return (
-    <TouchableOpacity style={styles.cardContainer} onPress={onPress} activeOpacity={0.85}>
-      {/* Indicador visual lateral */}
-      <View style={styles.indicadorLateral} />
+    <View style={[styles.cardContainer, style]}>
+      <TouchableOpacity style={styles.cardPressable} onPress={onPress} activeOpacity={0.85}>
+        <View style={styles.indicadorLateral} />
 
-      <View style={styles.cardConteudo}>
-        <View style={styles.headerLinha}>
-          <Text style={styles.titulo} numberOfLines={1}>{titulo}</Text>
-          {badge && (
-            <View style={styles.badgeContainer}>
-              <Text style={styles.badgeTexto}>{badge}</Text>
+        <View style={styles.cardConteudo}>
+          <View style={styles.headerLinha}>
+            <Text style={styles.titulo} numberOfLines={1}>{titulo}</Text>
+            {badge && (
+              <View style={styles.badgeContainer}>
+                <Text style={styles.badgeTexto}>{badge}</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.subtitulo} numberOfLines={2}>{subtitulo}</Text>
+
+          {detalheRodape && (
+            <View style={styles.rodapeContainer}>
+              <Feather name="clock" size={13} color="#94A3B8" style={styles.iconeRodape} />
+              <Text style={styles.detalheRodape}>{detalheRodape}</Text>
             </View>
           )}
         </View>
 
-        <Text style={styles.subtitulo} numberOfLines={2}>{subtitulo}</Text>
-
-        {detalheRodape && (
-          <View style={styles.rodapeContainer}>
-            <Feather name="clock" size={13} color="#94A3B8" style={styles.iconeRodape} />
-            <Text style={styles.detalheRodape}>{detalheRodape}</Text>
+        {mostrarSeta && (
+          <View style={styles.setaContainer}>
+            <Feather name={iconeNome} size={16} color="#CBD5E1" />
           </View>
         )}
-      </View>
-
-      <View style={styles.setaContainer}>
-        <Feather name={iconeNome} size={16} color="#CBD5E1" />
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+      {trailingAction}
+    </View>
   );
 }
 
@@ -57,7 +69,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#F1F5F9',
-    padding: 18,
     marginBottom: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -66,6 +77,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 3,
+  },
+  cardPressable: {
+    flex: 1,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   indicadorLateral: {
     width: 4,
