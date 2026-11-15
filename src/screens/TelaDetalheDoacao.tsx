@@ -1,12 +1,14 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import InfoRow from '../components/InfoRow';
+import CustomButton from '../components/CustomButton';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 import ModalHeader from '../components/ModalHeader';
 import { ApiError } from '../services/api';
-import { buscarDoacaoPorId } from '../services/doacoesService';
+import { buscarDoacaoPorId, excluirDoacao } from '../services/doacoesService';
 import type { RootStackParamList } from '../types/navigation';
 import type { Doacao } from '../types/doacao';
 
@@ -16,7 +18,10 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
   const { doacaoId } = route.params;
   const [doacao, setDoacao] = useState<Doacao | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState('');
+  const [confirmacaoWebVisivel, setConfirmacaoWebVisivel] = useState(false);
+  const [erroExclusaoWeb, setErroExclusaoWeb] = useState('');
 
   useFocusEffect(useCallback(() => {
     let montada = true;
@@ -48,6 +53,39 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
     };
   }, [doacaoId]));
 
+  async function confirmarExclusao() {
+    setErro('');
+    setExcluindo(true);
+    try {
+      await excluirDoacao(doacaoId);
+      navigation.goBack();
+    } catch (error) {
+      const mensagem = error instanceof ApiError
+        ? `A API respondeu com erro HTTP ${error.status}. A doação não foi excluída.`
+        : 'Não foi possível conectar à API. A doação não foi excluída.';
+      if (Platform.OS === 'web') {
+        setErroExclusaoWeb(mensagem);
+      } else {
+        Alert.alert('Não foi possível excluir a doação', mensagem);
+      }
+    } finally {
+      setExcluindo(false);
+    }
+  }
+
+  function solicitarExclusao() {
+    if (Platform.OS === 'web') {
+      setErroExclusaoWeb('');
+      setConfirmacaoWebVisivel(true);
+      return;
+    }
+
+    Alert.alert('Excluir doação', 'Deseja realmente excluir esta doação?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Excluir', style: 'destructive', onPress: () => void confirmarExclusao() },
+    ]);
+  }
+
   return (
     <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => navigation.goBack()}>
       <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={(event) => event.stopPropagation()}>
@@ -57,34 +95,78 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
           <View style={styles.centralizado}>
             <ActivityIndicator size="large" color="#2563EB" />
           </View>
-        ) : erro !== '' || !doacao ? (
+        ) : !doacao ? (
           <View style={styles.centralizado}>
             <Text style={styles.erroTexto}>{erro || 'Doação não encontrada.'}</Text>
           </View>
         ) : (
-          <View style={styles.card}>
-            <View style={styles.cabecalhoCard}>
-              <View style={styles.iconeContainer}>
-                <Feather name="package" size={22} color="#2563EB" />
+          <>
+            <View style={styles.card}>
+              <View style={styles.cabecalhoCard}>
+                <View style={styles.iconeContainer}>
+                  <Feather name="package" size={22} color="#2563EB" />
+                </View>
+                <View style={styles.flex1}>
+                  <Text style={styles.label}>Tipo do Item</Text>
+                  <Text style={styles.valorDestaque}>{doacao.tipoItem}</Text>
+                </View>
               </View>
-              <View style={styles.flex1}>
-                <Text style={styles.label}>Tipo do Item</Text>
-                <Text style={styles.valorDestaque}>{doacao.tipoItem}</Text>
+
+              <View style={styles.divisor} />
+              <InfoRow icon="layers" label="Quantidade" value={`${doacao.quantidade} unidades`} />
+              <InfoRow icon="map-pin" label="Ponto de Destino" value={doacao.pontoDestino} />
+              <InfoRow
+                icon="clock"
+                label="Data e Hora do Registro"
+                value={new Date(doacao.criadoEm).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'medium' })}
+                isLast
+              />
+            </View>
+            {erro !== '' && <Text style={styles.erroTexto}>{erro}</Text>}
+            <View style={styles.acoes}>
+              <View style={styles.acao}>
+                <CustomButton
+                  title="Editar"
+                  icon="edit-2"
+                  variant="outline"
+                  onPress={() => navigation.navigate('CadastrarModal', { doacaoId })}
+                />
+              </View>
+              <View style={styles.acao}>
+                <CustomButton
+                  title="Excluir"
+                  icon="trash-2"
+                  variant="danger-outline"
+                  onPress={solicitarExclusao}
+                  loading={excluindo}
+                />
               </View>
             </View>
-
-            <View style={styles.divisor} />
-            <InfoRow icon="layers" label="Quantidade" value={`${doacao.quantidade} unidades`} />
-            <InfoRow icon="map-pin" label="Ponto de Destino" value={doacao.pontoDestino} />
-            <InfoRow
-              icon="clock"
-              label="Data e Hora do Registro"
-              value={new Date(doacao.criadoEm).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'medium' })}
-              isLast
-            />
-          </View>
+          </>
         )}
       </TouchableOpacity>
+      {confirmacaoWebVisivel && (
+        <ConfirmationDialog
+          title="Excluir doação?"
+          message="Tem certeza de que deseja excluir esta doação? Essa ação não pode ser desfeita."
+          cancelLabel="Cancelar"
+          confirmLabel={excluindo ? 'Excluindo...' : 'Excluir'}
+          onCancel={() => setConfirmacaoWebVisivel(false)}
+          onConfirm={() => {
+            setConfirmacaoWebVisivel(false);
+            void confirmarExclusao();
+          }}
+        />
+      )}
+      {erroExclusaoWeb !== '' && (
+        <ConfirmationDialog
+          title="Não foi possível excluir a doação"
+          message={erroExclusaoWeb}
+          confirmLabel="OK"
+          confirmVariant="primary"
+          onConfirm={() => setErroExclusaoWeb('')}
+        />
+      )}
     </TouchableOpacity>
   );
 }
@@ -119,6 +201,14 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  acoes: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  acao: {
+    flex: 1,
   },
   card: {
     backgroundColor: '#F8FAFC',
