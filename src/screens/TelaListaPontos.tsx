@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import type { CompositeScreenProps } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TabParamList, RootStackParamList } from '../types/navigation';
@@ -14,6 +15,7 @@ import ScreenContainer from '../components/ScreenContainer';
 import ListItemCard from '../components/ListItemCard';
 import SearchInput from '../components/SearchInput';
 import EmptyState from '../components/EmptyState';
+import CustomButton from '../components/CustomButton';
 import type { Ponto } from '../types/ponto';
 import { buscarPaginaPontos } from '../services/pontosService';
 import { ApiError } from '../services/api';
@@ -50,7 +52,7 @@ export default function TelaListaPontos({ navigation }: Props) {
     return () => clearTimeout(timeout);
   }, [busca]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     const requisicaoId = ++requisicaoAtualRef.current;
     paginasSolicitadasRef.current = new Set([0]);
     carregandoMaisRef.current = false;
@@ -85,7 +87,7 @@ export default function TelaListaPontos({ navigation }: Props) {
         requisicaoAtualRef.current += 1;
       }
     };
-  }, [buscaAplicada]);
+  }, [buscaAplicada]));
 
   const carregarMaisPontos = useCallback(async () => {
     if (
@@ -152,6 +154,14 @@ export default function TelaListaPontos({ navigation }: Props) {
                 value={busca}
                 onChangeText={setBusca}
                 placeholder="Pesquisar por nome do ponto..."
+              />
+            </View>
+
+            <View style={styles.botaoCadastro}>
+              <CustomButton
+                title="Cadastrar ponto"
+                icon="plus"
+                onPress={() => navigation.navigate('FormularioPonto')}
               />
             </View>
 
@@ -232,6 +242,9 @@ const styles = StyleSheet.create({
   },
   searchWrapper: {
     marginBottom: 24,
+  },
+  botaoCadastro: {
+    marginBottom: 18,
   },
   secaoHeaderRow: {
     flexDirection: 'row',
