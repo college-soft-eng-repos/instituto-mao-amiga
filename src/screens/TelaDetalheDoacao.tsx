@@ -1,21 +1,13 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  Platform,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../types/navigation';
-import { listarDoacoes, excluirDoacao } from '../services/doacoesStorage';
-import CustomButton from '../components/CustomButton';
-import ModalHeader from '../components/ModalHeader';
 import InfoRow from '../components/InfoRow';
+import ModalHeader from '../components/ModalHeader';
+import { ApiError } from '../services/api';
+import { buscarDoacaoPorId } from '../services/doacoesService';
+import type { RootStackParamList } from '../types/navigation';
 import type { Doacao } from '../types/doacao';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetalheDoacao'>;
@@ -24,134 +16,77 @@ export default function TelaDetalheDoacao({ route, navigation }: Props) {
   const { doacaoId } = route.params;
   const [doacao, setDoacao] = useState<Doacao | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
 
-  useFocusEffect(
-    useCallback(() => {
-      let isMounted = true;
+  useFocusEffect(useCallback(() => {
+    let montada = true;
+    setCarregando(true);
+    setErro('');
 
-      async function carregarDetalhes() {
-        setCarregando(true);
-        const lista = await listarDoacoes();
-        const encontrada = lista.find((item: Doacao) => item.id === doacaoId);
-        
-        if (isMounted) {
-          setDoacao(encontrada || null);
-          setCarregando(false);
+    async function carregarDoacao() {
+      try {
+        const resultado = await buscarDoacaoPorId(doacaoId);
+        if (montada) setDoacao(resultado);
+      } catch (error) {
+        if (montada) {
+          setErro(
+            error instanceof ApiError && error.status === 404
+              ? 'doação não encontrada'
+              : error instanceof ApiError
+                ? `A API respondeu com erro HTTP ${error.status}.`
+                : 'Não foi possível conectar à API. Confira se ela está ligada.',
+          );
         }
+      } finally {
+        if (montada) setCarregando(false);
       }
-      carregarDetalhes();
-      return () => {
-        isMounted = false;
-      };
-    }, [doacaoId])
-  );
-
-  async function executarExclusao() {
-    try {
-      await excluirDoacao(doacaoId);
-      navigation.goBack();
-    } catch (error) {
-      console.error('ERRO na exclusão:', error);
-      Alert.alert('Erro', 'Não foi possível excluir a doação.');
     }
-  }
 
-  function confirmarExclusao() {
-    if (Platform.OS === 'web') {
-      const confirmado = window.confirm('Tem certeza de que deseja apagar esta doação registrada?');
-      if (confirmado) {
-        executarExclusao();
-      }
-    } else {
-      Alert.alert(
-        'Excluir doação',
-        'Tem certeza de que deseja apagar esta doação registrada?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Excluir',
-            style: 'destructive',
-            onPress: () => executarExclusao(),
-          },
-        ]
-      );
-    }
-  }
+    carregarDoacao();
+    return () => {
+      montada = false;
+    };
+  }, [doacaoId]));
 
   return (
-    <TouchableOpacity 
-      style={styles.modalOverlay} 
-      activeOpacity={1} 
-      onPress={() => navigation.goBack()}
-    >
-      <TouchableOpacity 
-        style={styles.modalContent} 
-        activeOpacity={1} 
-        onPress={(e) => e.stopPropagation()}
-      >
+    <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={(event) => event.stopPropagation()}>
         <ModalHeader title="Detalhes da Doação" onClose={() => navigation.goBack()} />
 
         {carregando ? (
           <View style={styles.centralizado}>
             <ActivityIndicator size="large" color="#2563EB" />
           </View>
-        ) : !doacao ? (
+        ) : erro !== '' || !doacao ? (
           <View style={styles.centralizado}>
-            <Text style={styles.erroTexto}>Doação não encontrada ou já excluída.</Text>
+            <Text style={styles.erroTexto}>{erro || 'Doação não encontrada.'}</Text>
           </View>
         ) : (
-          <View style={styles.conteudoInterno}>
-            <View style={styles.card}>
-              <View style={styles.cabecalhoCard}>
-                <View style={styles.iconeContainer}>
-                  <Feather name="package" size={22} color="#2563EB" />
-                </View>
-                <View style={styles.flex1}>
-                  <Text style={styles.label}>Tipo do Item</Text>
-                  <Text style={styles.valorDestaque}>{doacao.tipoItem}</Text>
-                </View>
+          <View style={styles.card}>
+            <View style={styles.cabecalhoCard}>
+              <View style={styles.iconeContainer}>
+                <Feather name="package" size={22} color="#2563EB" />
               </View>
-
-              <View style={styles.divisor} />
-
-              <InfoRow icon="layers" label="Quantidade" value={`${doacao.quantidade} unidades`} />
-              <InfoRow icon="map-pin" label="Ponto de Destino" value={pontoDestinoLimpo(doacao.pontoDestino)} />
-              <InfoRow 
-                icon="clock" 
-                label="Data e Hora do Registro" 
-                value={new Date(doacao.criadoEm).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'medium' })} 
-                isLast={true} 
-              />
-            </View>
-
-            {/* Botões lado a lado modernos */}
-            <View style={styles.containerBotoes}>
-              <View style={styles.botaoWrapper}>
-                <CustomButton
-                  title="Excluir"
-                  onPress={confirmarExclusao}
-                  variant="danger-outline"
-                  icon="trash-2"
-                />
-              </View>
-              <View style={styles.botaoWrapper}>
-                <CustomButton
-                  title="Editar"
-                  onPress={() => navigation.navigate('CadastrarModal', { doacaoId: doacao.id } )}
-                  variant="primary"
-                  icon="edit-3"
-                />
+              <View style={styles.flex1}>
+                <Text style={styles.label}>Tipo do Item</Text>
+                <Text style={styles.valorDestaque}>{doacao.tipoItem}</Text>
               </View>
             </View>
+
+            <View style={styles.divisor} />
+            <InfoRow icon="layers" label="Quantidade" value={`${doacao.quantidade} unidades`} />
+            <InfoRow icon="map-pin" label="Ponto de Destino" value={doacao.pontoDestino} />
+            <InfoRow
+              icon="clock"
+              label="Data e Hora do Registro"
+              value={new Date(doacao.criadoEm).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'medium' })}
+              isLast
+            />
           </View>
         )}
       </TouchableOpacity>
     </TouchableOpacity>
   );
-}
-
-function pontoDestinoLimpo(nome: string) {
-  return nome;
 }
 
 const styles = StyleSheet.create({
@@ -179,11 +114,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  conteudoInterno: {
-    justifyContent: 'space-between',
-  },
-  flex1: {
-    flex: 1,
+  erroTexto: {
+    fontSize: 15,
+    color: '#DC2626',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   card: {
     backgroundColor: '#F8FAFC',
@@ -191,7 +126,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     padding: 16,
-    marginBottom: 20,
   },
   cabecalhoCard: {
     flexDirection: 'row',
@@ -205,6 +139,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  flex1: {
+    flex: 1,
   },
   label: {
     fontSize: 11,
@@ -223,18 +160,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E2E8F0',
     marginVertical: 14,
-  },
-  erroTexto: {
-    fontSize: 15,
-    color: '#DC2626',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  containerBotoes: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  botaoWrapper: {
-    flex: 1,
   },
 });

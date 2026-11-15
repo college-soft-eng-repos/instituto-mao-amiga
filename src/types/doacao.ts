@@ -7,9 +7,3 @@ export type Doacao = {
 };
 
 export type NovaDoacao = Omit<Doacao, 'id' | 'criadoEm'>;
-
-export type RascunhoDoacao = {
-  tipoItem: string;
-  quantidade: string;
-  pontoDestinoId: string;
-};

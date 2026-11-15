@@ -1,104 +1,74 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
+  ActivityIndicator,
   Keyboard,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import CustomButton from '../components/CustomButton';
+import ModalHeader from '../components/ModalHeader';
+import { ApiError } from '../services/api';
+import { listarTodosPontos } from '../services/pontosService';
+import { cadastrarDoacao } from '../services/doacoesService';
 import type { RootStackParamList } from '../types/navigation';
 import type { Ponto } from '../types/ponto';
-import { listarPontos } from '../services/pontosService';
-import ModalHeader from '../components/ModalHeader';
-import CustomButton from '../components/CustomButton';
-import { 
-  salvarDoacao, 
-  listarDoacoes, 
-  atualizarDoacao, 
-  carregarRascunho, 
-  salvarRascunho, 
-  limparRascunho 
-} from '../services/doacoesStorage';
 
-// Atualizado para suportar a chamada direta via Stack Modal ou Tab
-type Props = NativeStackScreenProps<RootStackParamList, 'CadastrarModal'> & {
-  route: { params?: { doacaoId?: string } };
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'CadastrarModal'>;
 
-export default function TelaCadastroDoacao({ route, navigation }: Props) {
+function mensagemErro(error: unknown) {
+  if (error instanceof ApiError && error.status === 400) {
+    return 'A API recusou os dados. Confira os campos e tente novamente.';
+  }
+  if (error instanceof ApiError) {
+    return `A API respondeu com erro HTTP ${error.status}. Seus dados continuam no formulário.`;
+  }
+  return 'Não foi possível conectar à API. Confira se ela está ligada. Seus dados continuam no formulário.';
+}
+
+export default function TelaCadastroDoacao({ navigation }: Props) {
   const [tipoItem, setTipoItem] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [pontoDestinoId, setPontoDestinoId] = useState('');
-  const [erro, setErro] = useState('');
-  const [sucesso, setSucesso] = useState('');
-  const [carregando, setCarregando] = useState(true);
   const [pontos, setPontos] = useState<Ponto[]>([]);
+  const [carregandoPontos, setCarregandoPontos] = useState(true);
+  const [salvando, setSalvando] = useState(false);
   const [erroPontos, setErroPontos] = useState('');
-  
+  const [erro, setErro] = useState('');
   const inputQuantidadeRef = useRef<TextInput>(null);
-  
-  const doacaoId = route.params?.doacaoId;
-  const [isEdicao, setIsEdicao] = useState(false);
-  const [criadoEmOriginal, setCriadoEmOriginal] = useState<string | null>(null);
 
   useEffect(() => {
-    async function inicializarTela() {
-      try {
-        const pagina = await listarPontos();
-        setPontos(pagina.content);
+    let montado = true;
 
-        if (doacaoId) {
-          setIsEdicao(true);
-          const lista = await listarDoacoes();
-          const encontrada = lista.find((item) => String(item.id) === String(doacaoId));
-          if (encontrada) {
-            setTipoItem(encontrada.tipoItem || '');
-            setQuantidade(String(encontrada.quantidade || ''));
-            setCriadoEmOriginal(encontrada.criadoEm);
-            
-            const pontoEncontrado = pagina.content.find((p) => p.nome === encontrada.pontoDestino);
-            if (pontoEncontrado) {
-              setPontoDestinoId(pontoEncontrado.id);
-            }
-          }
-        } else {
-          const rascunho = await carregarRascunho();
-          if (rascunho) {
-            setTipoItem(rascunho.tipoItem || '');
-            setQuantidade(rascunho.quantidade || '');
-            setPontoDestinoId(rascunho.pontoDestinoId || '');
-          }
-        }
+    async function carregarPontos() {
+      try {
+        const lista = await listarTodosPontos();
+        if (montado) setPontos(lista);
       } catch (error) {
-        console.error('Erro ao inicializar formulário:', error);
-        setErroPontos('Não foi possível carregar os pontos. Verifique se a API está ligada.');
+        if (montado) setErroPontos(mensagemErro(error));
       } finally {
-        setCarregando(false);
+        if (montado) setCarregandoPontos(false);
       }
     }
-    inicializarTela();
-  }, [doacaoId]);
 
-  useEffect(() => {
-    if (carregando || isEdicao) return;
-
-    async function persistirRascunho() {
-      await salvarRascunho({ tipoItem, quantidade, pontoDestinoId });
-    }
-    persistirRascunho();
-  }, [tipoItem, quantidade, pontoDestinoId, carregando, isEdicao]);
+    carregarPontos();
+    return () => {
+      montado = false;
+    };
+  }, []);
 
   async function validarESalvar() {
-    setSucesso('');
+    setErro('');
 
-    if (tipoItem.trim() === '') {
+    const item = tipoItem.trim();
+    if (item === '') {
       setErro('Informe o tipo do item (ex.: arroz, roupa, leite).');
       return;
     }
@@ -106,83 +76,41 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
     const quantidadeNumerica = Number(quantidade.trim());
     if (
       quantidade.trim() === '' ||
-      isNaN(quantidadeNumerica) ||
       !Number.isInteger(quantidadeNumerica) ||
-      quantidadeNumerica < 1
+      quantidadeNumerica <= 0
     ) {
       setErro('A quantidade precisa ser um número inteiro maior que zero.');
       return;
     }
 
-    if (pontoDestinoId === '') {
-      setErro('Selecione o ponto de destino da doação.');
+    const pontoSelecionado = pontos.find((ponto) => ponto.id === pontoDestinoId);
+    if (!pontoSelecionado) {
+      setErro('Selecione um ponto de destino.');
       return;
     }
 
-    const ponto = pontos.find((p) => p.id === pontoDestinoId);
-    if (!ponto) {
-      setErro('Selecione um ponto de destino válido.');
-      return;
-    }
-
-    const nomePontoDestino = ponto.nome;
-
+    setSalvando(true);
     try {
-      if (isEdicao && doacaoId) {
-        await atualizarDoacao({
-          id: doacaoId,
-          tipoItem: tipoItem.trim(),
-          quantidade: quantidadeNumerica,
-          pontoDestino: nomePontoDestino,
-          criadoEm: criadoEmOriginal || new Date().toISOString(),
-        });
-        
-        Keyboard.dismiss();
-        navigation.goBack();
-      } else {
-        await salvarDoacao({
-          tipoItem: tipoItem.trim(),
-          quantidade: quantidadeNumerica,
-          pontoDestino: nomePontoDestino,
-        });
-
-        setErro('');
-        setSucesso(
-          `Doação registrada: ${quantidadeNumerica}x ${tipoItem.trim()} → ${nomePontoDestino}.`
-        );
-        
-        setTipoItem('');
-        setQuantidade('');
-        setPontoDestinoId('');
-        Keyboard.dismiss();
-
-        await limparRascunho();
-      }
+      await cadastrarDoacao({
+        tipoItem: item,
+        quantidade: quantidadeNumerica,
+        pontoDestino: pontoSelecionado.nome,
+      });
+      Keyboard.dismiss();
+      navigation.goBack();
     } catch (error) {
-      console.error('Erro ao salvar/atualizar a doação:', error);
-      setErro('Erro ao processar a doação.');
+      setErro(mensagemErro(error));
+    } finally {
+      setSalvando(false);
     }
   }
 
   return (
-    <TouchableOpacity 
-      style={styles.modalOverlay} 
-      activeOpacity={1} 
-      onPress={() => navigation.goBack()}
-    >
-      <TouchableOpacity 
-        style={styles.modalContent} 
-        activeOpacity={1} 
-        onPress={(e) => e.stopPropagation()}
-      >
-        <ModalHeader 
-          title={isEdicao ? 'Editar doação' : 'Cadastrar doação'} 
-          onClose={() => navigation.goBack()} 
-        />
+    <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={(event) => event.stopPropagation()}>
+        <ModalHeader title="Cadastrar doação" onClose={() => navigation.goBack()} />
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView
             contentContainerStyle={styles.conteudo}
             showsVerticalScrollIndicator={false}
@@ -213,31 +141,38 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
             />
 
             <Text style={styles.rotulo}>Ponto de destino</Text>
-
-            {carregando ? (
+            {carregandoPontos ? (
               <View style={styles.loadingPontos}>
                 <ActivityIndicator size="small" color="#2563EB" />
               </View>
             ) : erroPontos !== '' ? (
               <Text style={styles.erro}>{erroPontos}</Text>
+            ) : pontos.length === 0 ? (
+              <Text style={styles.erro}>A API não retornou pontos de destino disponíveis.</Text>
             ) : (
               <ScrollView
                 style={styles.trayContainer}
-                nestedScrollEnabled={true}
-                showsVerticalScrollIndicator={true}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
               >
                 {pontos.map((ponto) => {
                   const selecionado = pontoDestinoId === ponto.id;
                   return (
                     <TouchableOpacity
                       key={ponto.id}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: selecionado }}
                       style={[styles.pontoChip, selecionado && styles.pontoChipSelecionado]}
-                      onPress={() => setPontoDestinoId(ponto.id)}
+                      onPress={() => {
+                        setPontoDestinoId(ponto.id);
+                        setErro('');
+                      }}
                       activeOpacity={0.8}
                     >
                       <Text style={[styles.pontoTexto, selecionado && styles.pontoTextoSelecionado]}>
                         {ponto.nome}
                       </Text>
+                      {selecionado && <Feather name="check" size={16} color="#2563EB" />}
                     </TouchableOpacity>
                   );
                 })}
@@ -245,22 +180,18 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
             )}
 
             {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
-            {sucesso !== '' && <Text style={styles.sucesso}>{sucesso}</Text>}
 
             <View style={styles.containerBotoes}>
               <View style={styles.botaoWrapper}>
-                <CustomButton
-                  title="Cancelar"
-                  onPress={() => navigation.goBack()}
-                  variant="outline"
-                />
+                <CustomButton title="Cancelar" onPress={() => navigation.goBack()} variant="outline" />
               </View>
               <View style={styles.botaoWrapper}>
                 <CustomButton
-                  title={isEdicao ? 'Salvar' : 'Registrar'}
+                  title="Registrar"
                   onPress={validarESalvar}
                   variant="primary"
-                  icon={isEdicao ? 'check' : 'plus-circle'}
+                  icon="plus-circle"
+                  loading={salvando}
                 />
               </View>
             </View>
@@ -274,7 +205,7 @@ export default function TelaCadastroDoacao({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)', // Fundo translúcido escuro perfeitamente visível
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -316,7 +247,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   trayContainer: {
-    maxHeight: 130,
+    maxHeight: 160,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 12,
@@ -329,10 +260,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pontoChip: {
+    minHeight: 42,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 8,
     marginBottom: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   pontoChipSelecionado: {
     backgroundColor: '#EFF6FF',
@@ -349,12 +284,6 @@ const styles = StyleSheet.create({
   },
   erro: {
     color: '#DC2626',
-    fontSize: 13,
-    marginTop: 10,
-    fontWeight: '500',
-  },
-  sucesso: {
-    color: '#16A34A',
     fontSize: 13,
     marginTop: 10,
     fontWeight: '500',
