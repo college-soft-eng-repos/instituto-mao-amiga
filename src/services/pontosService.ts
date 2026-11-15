@@ -8,6 +8,10 @@ export function listarPontos(): Promise<PageResponse<Ponto>> {
   return buscarPaginaPontos(0, TAMANHO_PAGINA, '');
 }
 
+export function listarTodosPontos(): Promise<Ponto[]> {
+  return get<Ponto[]>('/pontos');
+}
+
 export function buscarPaginaPontos(
   page = 0,
   size = TAMANHO_PAGINA,

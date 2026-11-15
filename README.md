@@ -82,6 +82,10 @@ As doações são persistidas no mesmo H2. `criadoEm` é definido pelo serviço 
 > DELETE /api/v1/doacoes/{id}
 > ![204 OK](image-14.png)
 
+### Histórico e cadastro de doações no aplicativo (N2-6)
+
+O formulário carrega os pontos pela API e envia a doação com o nome do ponto selecionado. O histórico consulta `GET /api/v1/doacoes/filtro` com paginação e filtro por tipo de item; ao voltar do cadastro, ele recarrega a primeira página para mostrar a doação mais recente. A tela de detalhes consulta a API pelo id. O app não usa mais armazenamento local para doações. Edição e exclusão de doações no app ficam para a N2-7.
+
 ### Busca paginada de pontos (N2-2)
 
 O endpoint de filtro busca por nome ou bairro, ignorando maiúsculas e minúsculas. Sem filtro, retorna todos os pontos por página. O padrão é 10 itens, ordenados pelo nome; a URL pode sobrescrever a ordenação com `sort=bairro,asc`.
@@ -394,26 +398,25 @@ Este roteiro guia a demonstração das principais funcionalidades do aplicativo 
 
 - Toque no botão central de ação rápida (`+`) para abrir o modal de cadastro.
 - Preencha os campos de tipo de item, quantidade e selecione o ponto de destino.
-- Registre a doação e observe o feedback visual de sucesso.
+- Registre a doação; após o POST bem-sucedido, ela aparece no topo do histórico.
 
 3. **Histórico e Filtros**
 
-- Acesse a aba de Histórico para conferir o resumo de doações registradas.
-- Utilize o campo de busca/filtro para localizar itens específicos na lista.
+- Acesse a aba de Histórico para consultar as doações paginadas da API.
+- Utilize o campo de busca para filtrar por tipo de item na API e role até o fim para carregar mais resultados.
 
-4. **Edição e Exclusão**
+4. **Detalhe da Doação**
 
 - Selecione um item do histórico para abrir a tela de detalhes da doação.
-- Acione o botão de **Editar**, altere a quantidade no formulário e salve as alterações.
-- Retorne aos detalhes e acione o botão de **Excluir** para remover o registro de teste.
+- Confira o tipo, quantidade, ponto de destino e data carregados pelo id na API.
 
-5. **Persistência de Dados e Reinício**
+5. **Persistência de Dados**
 
 - Feche o aplicativo por completo e reabra.
-- Comprove que o armazenamento local mantém o histórico e os dados salvos intactos.
+- Comprove que o histórico continua disponível pela API após reiniciar o app.
 
 ---
 
 ## 🛠️ Decisão Técnica de Destaque
 
-- **Centralização do Armazenamento (`doacoesStorage.ts`):** Toda a lógica de leitura, escrita, rascunhos e exclusão foi isolada em um módulo de serviço único. Isso desacopla a camada de dados da interface (UI), garantindo alta coesão, facilidade de testes e manutenibilidade caso ocorra uma futura migração para um banco de dados embarcado.
+- **Acesso à API em camadas:** As telas de doações usam `doacoesService.ts`, que centraliza as operações HTTP por meio de `api.ts`. Assim, cadastro, histórico paginado, filtro e detalhe consultam o servidor sem persistir doações no AsyncStorage.
