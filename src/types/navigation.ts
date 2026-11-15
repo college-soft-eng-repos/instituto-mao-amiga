@@ -9,4 +9,5 @@ export type RootStackParamList = {
   FormularioPonto: { pontoId?: string } | undefined;
   Detalhe: { pontoId: string };
   DetalheDoacao: { doacaoId: string };
+  MeusPontos: undefined;
 };

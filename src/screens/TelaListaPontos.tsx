@@ -5,6 +5,7 @@ import {
   FlatList,
   Text,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,6 +20,7 @@ import CustomButton from '../components/CustomButton';
 import type { Ponto } from '../types/ponto';
 import { buscarPaginaPontos } from '../services/pontosService';
 import { ApiError } from '../services/api';
+import { adicionarFavorito, listarIdsFavoritos, removerFavorito } from '../services/pontosFavoritosStorage';
 
 const TAMANHO_PAGINA = 10;
 
@@ -43,6 +45,8 @@ export default function TelaListaPontos({ navigation }: Props) {
   const [carregandoMais, setCarregandoMais] = useState(false);
   const [erro, setErro] = useState('');
   const [erroMais, setErroMais] = useState('');
+  const [idsFavoritos, setIdsFavoritos] = useState<Set<string>>(new Set());
+  const [erroFavoritos, setErroFavoritos] = useState('');
   const requisicaoAtualRef = useRef(0);
   const paginasSolicitadasRef = useRef<Set<number>>(new Set());
   const carregandoMaisRef = useRef(false);
@@ -81,6 +85,16 @@ export default function TelaListaPontos({ navigation }: Props) {
       }
     }
 
+    listarIdsFavoritos()
+      .then((ids) => {
+        if (requisicaoId === requisicaoAtualRef.current) setIdsFavoritos(new Set(ids));
+      })
+      .catch(() => {
+        if (requisicaoId === requisicaoAtualRef.current) {
+          setErroFavoritos('Não foi possível ler os favoritos salvos neste aparelho.');
+        }
+      });
+
     carregarPrimeiraPagina();
     return () => {
       if (requisicaoId === requisicaoAtualRef.current) {
@@ -88,6 +102,30 @@ export default function TelaListaPontos({ navigation }: Props) {
       }
     };
   }, [buscaAplicada]));
+
+  async function alternarFavorito(id: string) {
+    const estavaFavorito = idsFavoritos.has(id);
+    setErroFavoritos('');
+    setIdsFavoritos((atuais) => {
+      const novos = new Set(atuais);
+      if (estavaFavorito) novos.delete(id);
+      else novos.add(id);
+      return novos;
+    });
+
+    try {
+      if (estavaFavorito) await removerFavorito(id);
+      else await adicionarFavorito(id);
+    } catch {
+      setIdsFavoritos((atuais) => {
+        const novos = new Set(atuais);
+        if (estavaFavorito) novos.add(id);
+        else novos.delete(id);
+        return novos;
+      });
+      setErroFavoritos('Não foi possível atualizar os favoritos neste aparelho.');
+    }
+  }
 
   const carregarMaisPontos = useCallback(async () => {
     if (
@@ -159,6 +197,12 @@ export default function TelaListaPontos({ navigation }: Props) {
 
             <View style={styles.botaoCadastro}>
               <CustomButton
+                title="Meus pontos"
+                icon="heart"
+                variant="secondary"
+                onPress={() => navigation.navigate('MeusPontos')}
+              />
+              <CustomButton
                 title="Cadastrar ponto"
                 icon="plus"
                 onPress={() => navigation.navigate('FormularioPonto')}
@@ -171,17 +215,31 @@ export default function TelaListaPontos({ navigation }: Props) {
                 <Text style={styles.contadorTexto}>{pagina?.totalElements ?? 0} encontrados</Text>
               </View>
             </View>
+            {erroFavoritos !== '' && <Text style={styles.erroFavoritos}>{erroFavoritos}</Text>}
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.itemWrapper}>
-            <ListItemCard
-              titulo={item.nome}
-              subtitulo={item.endereco}
-              detalheRodape={item.horario}
-              onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
-            />
-          </View>
+          <ListItemCard
+            style={styles.itemPonto}
+            titulo={item.nome}
+            subtitulo={item.endereco}
+            detalheRodape={item.horario}
+            onPress={() => navigation.navigate('Detalhe', { pontoId: item.id })}
+            mostrarSeta={false}
+            trailingAction={(
+              <TouchableOpacity
+                style={styles.botaoFavorito}
+                onPress={() => void alternarFavorito(item.id)}
+                accessibilityRole="button"
+                accessibilityLabel={idsFavoritos.has(item.id) ? `Remover ${item.nome} dos favoritos` : `Adicionar ${item.nome} aos favoritos`}
+                accessibilityState={{ selected: idsFavoritos.has(item.id) }}
+              >
+                <Text style={[styles.iconeFavorito, idsFavoritos.has(item.id) && styles.iconeFavoritoAtivo]}>
+                  {idsFavoritos.has(item.id) ? '♥' : '♡'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
         )}
         ListEmptyComponent={
           carregando ? (
@@ -244,6 +302,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   botaoCadastro: {
+    gap: 8,
     marginBottom: 18,
   },
   secaoHeaderRow: {
@@ -270,8 +329,30 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#475569',
   },
-  itemWrapper: {
-    paddingHorizontal: 20,
+  itemPonto: {
+    marginHorizontal: 20,
+  },
+  botaoFavorito: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 24,
+    backgroundColor: '#FFF1F2',
+    marginRight: 12,
+  },
+  iconeFavorito: {
+    color: '#64748B',
+    fontSize: 26,
+    lineHeight: 30,
+  },
+  iconeFavoritoAtivo: {
+    color: '#E11D48',
+  },
+  erroFavoritos: {
+    color: '#B91C1C',
+    fontSize: 12,
+    marginTop: 8,
   },
   emptyWrapper: {
     paddingHorizontal: 20,

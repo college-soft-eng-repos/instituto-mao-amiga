@@ -385,38 +385,28 @@ Certifique-se de ter o **Node.js** e o **npm** (ou yarn) instalados em sua máqu
 
 ---
 
-## Roteiro de Demonstração
+## Preparação e roteiro de demonstração (até 3 minutos)
 
-Este roteiro guia a demonstração das principais funcionalidades do aplicativo durante a apresentação do projeto:
+Antes da apresentação, deixe o backend e o app prontos:
 
-1. **Apresentação e Tela Inicial**
+1. Instale o **Java 21** e o Node.js.
+2. Na raiz do repositório, inicie a API com `cd api && ./mvnw spring-boot:run` (Windows: `mvnw.cmd spring-boot:run`). O Swagger fica em `http://localhost:8080/swagger-ui/index.html`.
+3. Em `src/services/api.ts`, atualize o endereço `10.40.28.92` em `API_URLS` para o IPv4 atual do computador. Para navegador, o endereço `localhost` já está configurado. O celular e o computador precisam estar na mesma rede Wi-Fi.
+4. Em outro terminal, na raiz, execute `npm install` e `npx expo start`. Abra no Expo Go ou pressione `w` para demonstrar no navegador.
+5. Deixe o Swagger aberto e prepare os corpos inválidos e os UUIDs inexistentes para mostrar as respostas 400 e 404 sem perder tempo durante a apresentação.
 
-- Inicie o app e apresente a barra de navegação flutuante adaptativa em tema claro.
-- Navegue entre os pontos de coleta e visualize os detalhes de um ponto através do modal fluído.
+### Roteiro cronometrado
 
-2. **Registro de Doação**
-
-- Toque no botão central de ação rápida (`+`) para abrir o modal de cadastro.
-- Preencha os campos de tipo de item, quantidade e selecione o ponto de destino.
-- Registre a doação; após o POST bem-sucedido, ela aparece no topo do histórico.
-
-3. **Histórico e Filtros**
-
-- Acesse a aba de Histórico para consultar as doações paginadas da API.
-- Utilize o campo de busca para filtrar por tipo de item na API e role até o fim para carregar mais resultados.
-
-4. **Detalhe da Doação**
-
-- Selecione um item do histórico para abrir a tela de detalhes da doação.
-- Confira o tipo, quantidade, ponto de destino e data carregados pelo id na API.
-
-5. **Persistência de Dados**
-
-- Feche o aplicativo por completo e reabra.
-- Comprove que o histórico continua disponível pela API após reiniciar o app.
+| Tempo | Demonstração |
+| --- | --- |
+| 0:00–0:35 | Na lista de pontos, busque um bairro. Cadastre um ponto temporário, abra-o, edite o horário e exclua-o. |
+| 0:35–0:50 | Marque um ponto com ♡ e abra **Meus pontos** para mostrar o favorito. Explique que o aparelho guarda somente o UUID e que os dados do ponto continuam vindo da API. |
+| 0:50–1:45 | Cadastre uma doação, abra-a no Histórico, edite a quantidade e salve. Volte ao detalhe e confirme o valor atualizado; depois exclua a doação e confirme. |
+| 1:45–2:35 | No Swagger, mostre uma requisição inválida de ponto ou doação respondendo 400 e uma consulta/edição com UUID inexistente respondendo 404. |
+| 2:35–3:00 | Explique a decisão técnica: favoritos são uma preferência pessoal do aparelho e ficam no AsyncStorage como IDs; pontos e doações são dados compartilhados e ficam no servidor, acessados pelos services da API. |
 
 ---
 
 ## 🛠️ Decisão Técnica de Destaque
 
-- **Acesso à API em camadas:** As telas de doações usam `doacoesService.ts`, que centraliza as operações HTTP por meio de `api.ts`. Assim, cadastro, histórico paginado, filtro e detalhe consultam o servidor sem persistir doações no AsyncStorage.
+- **Dados no lugar adequado:** O AsyncStorage guarda apenas os IDs dos pontos favoritos, que são uma preferência local. Os detalhes dos pontos e todas as doações permanecem na API, evitando cópias locais desatualizadas e permitindo que o servidor valide e compartilhe esses dados.
